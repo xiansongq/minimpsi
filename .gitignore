@@ -1,0 +1,12 @@
+.vs/
+.vscode/
+out/
+thirdparty/
+tests/cmakeTests/
+tests/CMakeFiles/
+CMakeSettings.json
+frontend/CMakeFiles/
+CMakeFiles/
+volePSI/CMakeFiles
+CMakeCache.txt
+~/
