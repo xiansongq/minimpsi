@@ -138,6 +138,7 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     REccPoint eccpoint = mCurve;
     eccpoint = mG * eccnum;
     akrandom.emplace_back(mCurve);
+    // 接收 Eccpoint 的方法
     for (u64 i = 1; i < nParties; i++)
     {
       REccPoint eccpoint = mCurve;
@@ -157,45 +158,91 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     // 为leadIdx 创建集合大小的椭圆曲线点
     std::vector<REccNumber> nSeeds;
     std::vector<REccPoint> mypoint;
-    std::vector<block> values(setSize);
-    // 接收 Eccpoint 的方法
+    // std::vector<block> values(setSize);
+    std::vector<std::vector<u8>> values(setSize);
+
     for (int i = 0; i < setSize; i++)
     {
       nSeeds.emplace_back(mCurve);
       nSeeds[i].randomize(prng);
       mypoint.emplace_back(mCurve);
       mypoint[i] = mG * nSeeds[i]; // g^ri
-      values[i] = Eccpoint_to_block(mypoint[i]);
+      values[i] = REccPoint_to_Vector(mypoint[i]);
     }
+    size_t n = values[0].size();
+    oc::Matrix<u8> val(setSize, n);
+    for (int i = 0; i < setSize; i++)
+    {
+      // Make sure the size of the vector in values[i] matches the number of columns 'n'
+      assert(values[i].size() == n);
+
+      // Copy each element from the vector in values[i] to the corresponding row in the 'val' matrix
+      for (size_t j = 0; j < n; j++)
+      {
+        val(i, j) = values[i][j];
+      }
+    }
+
+    // for (u64 i = 0; i < setSize; i++)
+    // {
+    //   eccblock[i] = REccPoint_to_Vector(mypoint[i]);
+    // }
+    // for (u64 i = 0; i < setSize; i++)
+    // {
+    //   blockecc[i] = vector_to_REccPoint(eccblock[i]);
+    // }
+    // // // 查看转换前后 是否相等
+    // for (u64 i = 0; i < setSize; i++)
+    // {
+    //   // std::cout << "block: " << eccblock[i] << std::endl;
+    //   std::cout << "原始ecc: " << mypoint[i] << std::endl;
+    //   std::cout << "转换后： " << blockecc[i] << std::endl;
+    // }
 
     // OKVS 打包
     Baxos paxos;
-    paxos.init(setSize, 64, 3, 40, PaxosParam::GF128, block(0, 0));
-    std::vector<block> pax(paxos.size());
-    //std::vector<REccPoint> pax(paxos.size());
-    // 好像 可以直接 使用 REccpoint 类型为value 后续再看
-    paxos.solve<block>(inputs, values, pax, nullptr, 0);
-    //paxos.solve<REccPoint>(inputs, mypoint, pax, nullptr, 0);
-    // paxos.decode<block>(inputs, values1, pax, 0);
-    std::cout << paxos.size() << std::endl;
+    paxos.init(setSize, 64, 3, 40, PaxosParam::Binary, block(0, 0));
+    oc::Matrix<u8> pax(paxos.size(), n), val2(setSize, n);
+    paxos.solve<u8>(inputs, (val), (pax), nullptr);
     // 发送 paxos 的Seed ...
-    //  发送 paxos 向量的大小
+    //  发送 paxos 向量行的大小
     for (u64 i = 1; i < nParties; i++)
       chls[i][0].asyncSend(paxos.size());
-    // 发送 paxos 向量
-    // for (u64 i = 1; i < nParties; i++)
-    // {
-    //   for (u64 j = 0; j < paxos.size(); j++)
-    //   {
-    //     u8 *temp = new u8[eccpoint.sizeBytes()];
-    //     pax[j].toBytes(temp);
-    //     chls[i][0].asyncSend(std::move(temp));
-    //   }
-    // }
-
+    // 发送二维向量 列的大小
+    for (u64 i = 1; i < nParties; i++)
+      chls[i][0].asyncSend(n);
+    // 打印pax 矩阵
+    for (u64 j = 0; j < paxos.size(); j++)
+    {
+      std::cout << "send j:" << j << std::endl;
+      for (u64 k = 0; k < n; k++)
+      {
+        std::cout << (int)pax[j][k] << " ";
+      }
+      std::cout << std::endl;
+    }
+    // 发送 paxos 向量 为了接收数据的正确性 只能一个一个数据的发送 后续需要改进
+    for (u64 i = 1; i < nParties; i++)
+    {
+      for (u64 j = 0; j < paxos.size(); j++)
+      {
+        for (u64 k = 0; k < n; k++)
+        {
+          chls[i][0].asyncSend(pax[j][k]);
+        }
+      }
+    }
     // // 发送数据集给接收方进行解码成功性测试
-    // for(u64 i=1;i<nParties;i++)
-    //   chls[i][0].asyncSend(values.data(),values.size());
+    for (u64 i = 1; i < nParties; i++)
+    {
+      for (u64 j = 0; j < setSize; j++)
+      {
+        for (u64 k = 0; k < n; k++)
+        {
+          chls[i][0].asyncSend(val[j][k]);
+        }
+      }
+    }
   }
   else
   {
@@ -228,56 +275,138 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     u8 *temp = new u8[eccpoint.sizeBytes()];
     eccpoint.toBytes(temp);
     chls[0][0].asyncSend(std::move(temp));
-    // 接收 paxos seed
-    // block seed;
-    // chls[0][0].recv(&seed, sizeof(block));
-    // std::cout << "接收数据。。。。" << std::endl;
-    // std::cout << "接收到的paxos seed: " << seed << std::endl;
-    // 接收 paxos 向量大小
-    size_t size = 0;
-    chls[0][0].recv(size);
-    // 接收paxos 向量
-    std::vector<block> pax(size);
-    // for (u64 i = 0; i < size; i++)
-    // {
-    //   u8 *temp = new u8[eccpoint.sizeBytes()];
-    //   chls[0][0].recv(temp);
-    //   pax[i].fromBytes(temp);
-    // }
-
-    // chls[0][0].recv(pax.data(), size * sizeof(REccPoint));
-    //  创建对应数据集 临时的
     std::vector<block> inputs(setSize);
     for (u64 i = 0; i < expectedIntersection; i++)
       inputs[i] = prngSet.get<block>();
     for (u64 i = expectedIntersection; i < setSize; i++)
       inputs[i] = prng1.get<block>();
-    // 初始化 paxos
+    // 接收 paxos seed
+    // block seed;
+    // chls[0][0].recv(&seed, sizeof(block));
+    // std::cout << "接收数据。。。。" << std::endl;
+    // std::cout << "接收到的paxos seed: " << seed << std::endl;
+    //  创建对应数据集 临时的
+    // 接收 paxos 行向量大小
+    size_t size = 0;
+    chls[0][0].recv(size);
+    // 接收 paxos 列向量大小
+    size_t n = 0;
+    chls[0][0].recv(n);
+    // 接收paxos 向量
+    //  paxos 解码 values 必须先设置 size
+    oc::Matrix<u8> pax(size, n), val(setSize, n);
+    u64 row = 0;
+    for (u64 j = 0; j < size; j++)
+    {
+      for (u64 k = 0; k < n; k++)
+      {
+
+        chls[0][0].recv(pax[j][k]);
+      }
+    }
+    /*     if (myIdx == 1)
+        {
+          // 打印pax 矩阵
+          for (u64 j = 0; j < size; j++)
+          {
+            std::cout << "recv j:" << j << std::endl;
+
+            for (u64 k = 0; k < n; k++)
+            {
+              std::cout << (int)pax[j][k] << " ";
+            }
+            std::cout << std::endl;
+          }
+        } */
+    //  初始化 paxos
     Baxos paxos;
-    paxos.init(setSize, 64, 3, 40, PaxosParam::GF128, block(0, 0));
-    // paxos 解码 values 必须先设置 size
-    std::vector<block> values(setSize);
-    //std::vector<REccPoint> values(setSize);
-    paxos.decode<block>(inputs, values, pax, 0);
+    paxos.init(setSize, 64, 3, 40, PaxosParam::Binary, block(0, 0));
+    paxos.decode<u8>(inputs, val, pax, 0);
+    // 检查解码后的元素是否相同
     // 接收测试数据进行paxos解码测试
-    // std::vector<block> temps(setSize);
-    // chls[0][0].recv(temps.data(),temps.size());
-    // // 检查解码后的元素是否相同
-    // for (u64 i = 0; i < setSize; i++)
-    // {
-    //   if (temps[i] == values[i])
-    //     std::cout << "i:" << i << " equal" << std::endl;
-    //   else
-    //     std::cout << "i:" << i << " not euqal" << std::endl;
-    // }
-    // okvs 解码后 再次计算椭圆曲线
-    // 首先将okvs解码后的 block 解码为eccpoint
-    //  std::vector<REccPoint> px(setSize);   // 存储 g^b_i
-    //  for(u64 i=0;i<setSize;i++)
-    //    px[i]=block_to_Eccpoint(values[i]);
-    // //计算 g^(b_i*a_i)
-    // REccPoint tempPoint=px[0]*eccnum;
-    // std::cout<<"tempPoint: "<<tempPoint<<std::endl;
+    oc::Matrix<u8> temps(setSize, n);
+    for (u64 j = 0; j < setSize; j++)
+    {
+      for (u64 k = 0; k < n; k++)
+      {
+        chls[0][0].recv(temps[j][k]);
+      }
+    }
+    for (u64 i = 0; i < setSize; i++)
+    {
+      bool flag = true;
+      for (u64 j = 0; j < val[i].size(); j++)
+      {
+        if (val[i][j] != temps[i][j])
+        {
+          flag = false;
+          break;
+        }
+      }
+      if (flag == true)
+        std::cout << "i: " << i << " queal" << std::endl;
+      else
+        std::cout << "i: " << i << " not equal" << std::endl;
+    }
+
+    // auto t=val[0]^zero_value[0];
+    // 先异或 在计算椭圆曲线
+    //     std::vector<BitVector> bitzero(nParties);
+
+    //     for (u64 i = 0; i < nParties; i++)
+    //     {
+    //       BitVector vs(&zero_value[i], sizeof(u8));
+    //       bitzero[i] = vs;
+    //     }
+    //     std::vector<REccPoint> px(setSize);  // 存储 g^b_i
+
+    //     std::vector<REccPoint> npx(setSize); // 存储 g^(b_i*a_i)=k_i
+
+    //     for (u64 i = 0; i < setSize; i++)
+    //     {
+    //       BitVector vecp(val[i].data(), n);
+    //       // 异或上所有的零共享值
+    //       for (u64 j = 0; j < nParties; j++)
+    //       {
+    //         vecp = vecp ^ bitzero[j];
+    //       }
+    //       // 异或的结果 转为REccPoint
+    //       px[i] = vector_to_REccPoint(vecp);
+    //  // 计算 g^(b_i*a_i)
+    //       npx[i] = px[i] * eccnum;
+    //     }
+    //     // okvs 解码后 再次计算椭圆曲线
+    //     // 首先将okvs解码后的 block 解码为eccpoint
+    std::vector<REccPoint> px(setSize);  // 存储 g^b_i
+    std::vector<REccPoint> npx(setSize); // 存储 g^(b_i*a_i)=k_i
+    for (u64 i = 0; i < setSize; i++)
+    {
+      std::vector<u8> vec;
+      for (auto a : val[i])
+        vec.push_back(a);
+      std::cout << vec.size() << std::endl;
+      px[i] = vector_to_REccPoint(vec);
+      std::cout << "i: " << i << std::endl;
+      std::cout << px[i] << std::endl;
+      // 计算 g^(b_i*a_i)
+      npx[i] = px[i] * eccnum;
+      for (u64 j = 0; j < nParties; j++)
+      {
+        // REccNumber number(zero_value[i]);
+        // REccPoint point(number);
+        // npx[i] =npx[i]^npx[i];
+        u8 *newdata;
+        npx[i].toBytes(newdata);
+        u8 ts = *newdata;
+        auto s = zero_value[i] ^ ts;
+        std::cout << s << std::endl;
+      }
+    }
+    //     // 计算 k_i \xor zeroshar
+    //     for (u64 j = 0; j < setSize; j++)
+    //       for (u64 i = 0; i < nParties; i++)
+    //       {
+    //       }
   }
 
   for (u64 i = 0; i < nParties; ++i)
