@@ -18,3 +18,9 @@ std::string REccPoint_to_string(const oc::REccPoint &point);
 REccPoint string_to_REccPoint(const std::string &str);
 std::vector<u8> REccPoint_to_Vector(const REccPoint &point);
 REccPoint vector_to_REccPoint(std::vector<u8> &data);
+/* REccPoint to bitvector */
+BitVector REccPoint_to_BitVector(const REccPoint& point);
+/* bitvector to REccPoint */
+REccPoint BitVector_to_REccPoint(const BitVector& bv);
+/* REccPoint xor u8 vector */
+REccPoint REccPoint_xor_u8(const REccPoint &point, const std::vector<u8> &vecu);

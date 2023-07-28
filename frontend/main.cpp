@@ -21,8 +21,111 @@
 #include "cryptoTools/Crypto/Rijndael256.h"
 #include "tools.h"
 #include "volePSI/Paxos.h"
+#include "coproto/Socket/AsioSocket.h"
+#include "miniMPSI.h"
 using namespace osuCrypto;
 using namespace volePSI;
+void classTest(u64 nParties, u64 setSize, u64 myIdx)
+{
+  // 初始化计算安全参数和 统计安全参数
+  u64 SecParam = 180, StaParam = 40;
+  std::string name("psi");
+  IOService ios(0);
+  u64 numThreads = 1;
+  u64 leadIdx = 0;
+  // 期望交集
+  u64 expectedIntersection = 10;
+  std::vector<oc::Socket> chls(nParties);
+  for (u64 i = 0; i < nParties; ++i)
+  {
+    if (i < myIdx)
+    {
+      u32 port = 1200 + i * 100 + myIdx;
+      // chls[i].resize(numThreads);
+      std::string ip = "localhost:" + std::to_string(port);
+      std::cout << "ip: " << ip << std::endl;
+      // chls[i] = coproto::asioConnect(ip, 1);
+      // chls[i].resize(numThreads);
+      chls[i] = coproto::asioConnect(ip, 0);
+      /*       for (u64 j = 0; j < numThreads; j++)
+            {
+              try
+              {
+                chls[i][j] = coproto::asioConnect(ip, 0);
+              }
+              catch (const std::exception &e)
+              {
+                std::cout << "error" << std::endl;
+              }
+            } */
+    }
+    else if (i > myIdx)
+    {
+      u32 port = 1200 + myIdx * 100 + i; // get the same port; i=2 & pIdx=1 =>port=102
+                                         // chls[i].resize(numThreads);
+      std::string ip = "localhost:" + std::to_string(port);
+      std::cout << "ip: " << ip << std::endl;
+      // chls[i] = coproto::asioConnect(ip, 0);
+      chls[i] = coproto::asioConnect(ip, 1);
+      /*       chls[i].resize(numThreads);
+            for (u64 j = 0; j < numThreads; j++)
+            {
+              try
+              {
+                chls[i][j] = coproto::asioConnect(ip, 1);
+              }
+              catch (const std::exception &e)
+              {
+                std::cout << "error" << std::endl;
+              }
+            } */
+    }
+  }
+  // 首先生成 零共享值
+  std::vector<PRNG> mPrngs(nParties);
+  std::mutex mtx;
+  PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
+  PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
+  PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
+  std::vector<std::vector<block>> zsSeeds(nParties); // 存储随机种子
+
+  // 为每个用户生成nparties个随机种子
+  for (u64 i = 0; i < nParties; i++)
+  {
+    zsSeeds[i].resize(nParties);
+    for (u64 j = 0; j < nParties; j++)
+    {
+      if (i <= j)
+      {
+        zsSeeds[i][j] = prng0.get<block>();
+      }
+      else
+        zsSeeds[i][j] = zsSeeds[j][i];
+    }
+  }
+  mPrngs.resize(nParties);
+  for (u64 i = 0; i < nParties; i++)
+  {
+    mPrngs[i].SetSeed(zsSeeds[myIdx][i]);
+  }
+  if (myIdx == 0)
+  {
+    std::cout << "myIdx: " << myIdx << std::endl;
+
+    volePSI::miniMPSIReceiver receiver;
+    receiver.nParties = nParties;
+    receiver.myIdx = myIdx;
+    macoro::sync_wait(receiver.receive(mPrngs, chls, numThreads));
+  }
+  else
+  {
+    volePSI::miniMPSISender sender;
+    sender.nParties = nParties;
+    sender.myIdx = myIdx;
+    macoro::sync_wait(sender.send(mPrngs, chls, numThreads));
+  }
+}
+
 void tparty(u64 nParties, u64 setSize, u64 myIdx)
 {
   // 初始化计算安全参数和 统计安全参数
@@ -34,6 +137,53 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
   // 期望交集
   u64 expectedIntersection = 10;
   std::vector<Endpoint> ep(nParties);
+  // std::vector<std::vector<oc::Socket>> chls(nParties);
+  // std::vector<std::vector<Channel>> chls(nParties);
+
+  /* for (u64 i = 0; i < nParties; ++i)
+  {
+    if (i < myIdx)
+    {
+      u32 port = 1200 + i * 100 + myIdx;
+      // chls[i].resize(numThreads);
+      std::string ip = "localhost:" + std::to_string(port);
+      std::cout << "ip: " << ip << std::endl;
+     // chls[i] = coproto::asioConnect(ip, 1);
+      chls[i].resize(numThreads);
+
+      for (u64 j = 0; j < numThreads; j++)
+      {
+        try
+        {
+          chls[i][j] = coproto::asioConnect(ip, 0);
+        }
+        catch (const std::exception &e)
+        {
+          std::cout << "error" << std::endl;
+        }
+      }
+    }
+    else if (i > myIdx)
+    {
+      u32 port = 1200 + myIdx * 100 + i; // get the same port; i=2 & pIdx=1 =>port=102
+                                         // chls[i].resize(numThreads);
+      std::string ip = "localhost:" + std::to_string(port);
+      std::cout << "ip: " << ip << std::endl;
+      //chls[i] = coproto::asioConnect(ip, 0);
+      chls[i].resize(numThreads);
+      for (u64 j = 0; j < numThreads; j++)
+      {
+        try
+        {
+          chls[i][j] = coproto::asioConnect(ip, 1);
+        }
+        catch (const std::exception &e)
+        {
+          std::cout <<"error" << std::endl;
+        }
+      }
+    }
+  } */
 
   for (u64 i = 0; i < nParties; ++i)
   {
@@ -75,8 +225,6 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
 
   // 首先生成 零共享值
   std::vector<PRNG> mPrngs(nParties);
-
-  // std::vector<std::thread> thrds(chls.size());
   std::mutex mtx;
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
   PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
@@ -103,6 +251,7 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     mPrngs[i].SetSeed(zsSeeds[myIdx][i]);
   }
   // 不同用户编号执行不同部分
+
   if (myIdx == 0)
   {
     // 接收所有其他参与方的零共享值
@@ -121,8 +270,17 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
       chls[i][0].recv(zero_value.data(), zero_value.size());
       zeroValue[i] = zero_value;
     }
-    u64 sum = 0;
 
+    u64 sum = 0;
+    // 打印所有的零共享值
+    for (u64 i = 0; i < nParties; i++)
+    {
+      for (u64 j = 0; j < nParties; j++)
+      {
+        std::cout << (int)zeroValue[i][j] << " ";
+      }
+      std::cout << std::endl;
+    }
     // 接收 g^a_i
     REllipticCurve mCurve;
     std::vector<REccPoint> akrandom;
@@ -143,6 +301,7 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     {
       REccPoint eccpoint = mCurve;
       u8 *temp = new u8[eccpoint.sizeBytes()];
+      // for (u64 t = 0; t < numThreads; t++)
       chls[i][0].recv(temp);
       eccpoint.fromBytes(temp);
       akrandom.emplace_back(mCurve);
@@ -175,7 +334,6 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     {
       // Make sure the size of the vector in values[i] matches the number of columns 'n'
       assert(values[i].size() == n);
-
       // Copy each element from the vector in values[i] to the corresponding row in the 'val' matrix
       for (size_t j = 0; j < n; j++)
       {
@@ -201,7 +359,7 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
 
     // OKVS 打包
     Baxos paxos;
-    paxos.init(setSize, 64, 3, 40, PaxosParam::Binary, block(0, 0));
+    paxos.init(setSize, 128, 3, 40, PaxosParam::Binary, block(0, 0));
     oc::Matrix<u8> pax(paxos.size(), n), val2(setSize, n);
     paxos.solve<u8>(inputs, (val), (pax), nullptr);
     // 发送 paxos 的Seed ...
@@ -211,27 +369,34 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     // 发送二维向量 列的大小
     for (u64 i = 1; i < nParties; i++)
       chls[i][0].asyncSend(n);
-    // 打印pax 矩阵
-    for (u64 j = 0; j < paxos.size(); j++)
-    {
-      std::cout << "send j:" << j << std::endl;
-      for (u64 k = 0; k < n; k++)
-      {
-        std::cout << (int)pax[j][k] << " ";
-      }
-      std::cout << std::endl;
-    }
-    // 发送 paxos 向量 为了接收数据的正确性 只能一个一个数据的发送 后续需要改进
+
+    // 发送 paxos 向量 为了接收数据的正确性 只能一个一个数据的发送 后续需要改进 使用多线程发送
     for (u64 i = 1; i < nParties; i++)
     {
+
       for (u64 j = 0; j < paxos.size(); j++)
       {
         for (u64 k = 0; k < n; k++)
         {
-          chls[i][0].asyncSend(pax[j][k]);
+          chls[i][0].resetStats();
+          chls[i][0].asyncSend(&pax(j, k), 1);
+          chls[i][0].resetStats();
         }
       }
     }
+
+    // 打印一下pax
+    /*    for (u64 j = 0; j < paxos.size(); j++)
+       {
+         std::cout << "send j:" << j << std::endl;
+
+         for (u64 k = 0; k < n; k++)
+         {
+           std::cout << (int)pax[j][k] << " ";
+         }
+         std::cout << std::endl;
+       } */
+
     // // 发送数据集给接收方进行解码成功性测试
     for (u64 i = 1; i < nParties; i++)
     {
@@ -239,10 +404,31 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
       {
         for (u64 k = 0; k < n; k++)
         {
-          chls[i][0].asyncSend(val[j][k]);
+          chls[i][0].resetStats();
+          chls[i][0].asyncSend(&val[j][k], 1);
+          chls[i][0].resetStats();
         }
       }
     }
+    paxos.decode<u8>(inputs, val2, pax, 0);
+    std::cout << "-------------接收端测试----------------" << std::endl;
+    for (u64 i = 0; i < setSize; i++)
+    {
+      bool flag = true;
+      for (u64 j = 0; j < val[i].size(); j++)
+      {
+        if (val[i][j] != val2[i][j])
+        {
+          flag = false;
+          break;
+        }
+      }
+      if (flag == true)
+        std::cout << "i: " << i << " queal" << std::endl;
+      else
+        std::cout << "i: " << i << " not equal" << std::endl;
+    }
+    std::cout << "-------------接收端测试----------------" << std::endl;
   }
   else
   {
@@ -256,7 +442,10 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
         zero_value[i] = zero_value[i] ^ mPrngs[i].get<u8>();
       }
     }
+    // for (u64 t = 0; t < numThreads; t++)
+    //{
     chls[0][0].send(zero_value.data(), zero_value.size());
+    //}
     /* 执行 AKOPRF */
     // 1、选择随机数 a_i
     PRNG prng;
@@ -300,8 +489,9 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     {
       for (u64 k = 0; k < n; k++)
       {
-
-        chls[0][0].recv(pax[j][k]);
+        chls[0][0].resetStats();
+        chls[0][0].recv(&pax(j, k), 1);
+        chls[0][0].resetStats();
       }
     }
     /*     if (myIdx == 1)
@@ -320,7 +510,7 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
         } */
     //  初始化 paxos
     Baxos paxos;
-    paxos.init(setSize, 64, 3, 40, PaxosParam::Binary, block(0, 0));
+    paxos.init(setSize, 128, 3, 40, PaxosParam::Binary, block(0, 0));
     paxos.decode<u8>(inputs, val, pax, 0);
     // 检查解码后的元素是否相同
     // 接收测试数据进行paxos解码测试
@@ -329,7 +519,9 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
     {
       for (u64 k = 0; k < n; k++)
       {
-        chls[0][0].recv(temps[j][k]);
+        chls[0][0].resetStats();
+        chls[0][0].recv(temps(j, k));
+        chls[0][0].resetStats();
       }
     }
     for (u64 i = 0; i < setSize; i++)
@@ -348,65 +540,20 @@ void tparty(u64 nParties, u64 setSize, u64 myIdx)
       else
         std::cout << "i: " << i << " not equal" << std::endl;
     }
-
-    // auto t=val[0]^zero_value[0];
-    // 先异或 在计算椭圆曲线
-    //     std::vector<BitVector> bitzero(nParties);
-
-    //     for (u64 i = 0; i < nParties; i++)
-    //     {
-    //       BitVector vs(&zero_value[i], sizeof(u8));
-    //       bitzero[i] = vs;
-    //     }
-    //     std::vector<REccPoint> px(setSize);  // 存储 g^b_i
-
-    //     std::vector<REccPoint> npx(setSize); // 存储 g^(b_i*a_i)=k_i
-
-    //     for (u64 i = 0; i < setSize; i++)
-    //     {
-    //       BitVector vecp(val[i].data(), n);
-    //       // 异或上所有的零共享值
-    //       for (u64 j = 0; j < nParties; j++)
-    //       {
-    //         vecp = vecp ^ bitzero[j];
-    //       }
-    //       // 异或的结果 转为REccPoint
-    //       px[i] = vector_to_REccPoint(vecp);
-    //  // 计算 g^(b_i*a_i)
-    //       npx[i] = px[i] * eccnum;
-    //     }
-    //     // okvs 解码后 再次计算椭圆曲线
-    //     // 首先将okvs解码后的 block 解码为eccpoint
-    std::vector<REccPoint> px(setSize);  // 存储 g^b_i
-    std::vector<REccPoint> npx(setSize); // 存储 g^(b_i*a_i)=k_i
-    for (u64 i = 0; i < setSize; i++)
-    {
-      std::vector<u8> vec;
-      for (auto a : val[i])
-        vec.push_back(a);
-      std::cout << vec.size() << std::endl;
-      px[i] = vector_to_REccPoint(vec);
-      std::cout << "i: " << i << std::endl;
-      std::cout << px[i] << std::endl;
-      // 计算 g^(b_i*a_i)
-      npx[i] = px[i] * eccnum;
-      for (u64 j = 0; j < nParties; j++)
-      {
-        // REccNumber number(zero_value[i]);
-        // REccPoint point(number);
-        // npx[i] =npx[i]^npx[i];
-        u8 *newdata;
-        npx[i].toBytes(newdata);
-        u8 ts = *newdata;
-        auto s = zero_value[i] ^ ts;
-        std::cout << s << std::endl;
-      }
-    }
-    //     // 计算 k_i \xor zeroshar
-    //     for (u64 j = 0; j < setSize; j++)
-    //       for (u64 i = 0; i < nParties; i++)
-    //       {
-    //       }
+    /*     std::vector<REccPoint> px(setSize);  // 存储 g^b_i
+        std::vector<REccPoint> npx(setSize); // 存储 g^(b_i*a_i)=k_i
+        for (u64 i = 0; i < setSize; i++)
+        {
+          std::vector<u8> vec;
+          for (auto a : val[i])
+            vec.push_back(a);
+          px[i] = vector_to_REccPoint(vec);
+          // 计算 g^(b_i*a_i)
+          npx[i] = px[i] * eccnum;
+          // 密钥k与 零共享值进行异或
+          npx[i] = REccPoint_xor_u8(npx[i], zero_value);
+        } */
+    // 进行新一轮OKVS打包  先解决 网络io的问题
   }
 
   for (u64 i = 0; i < nParties; ++i)
@@ -491,8 +638,8 @@ int main(int argc, char **argv)
   case 2:
     if (argv[1][0] == '-' && argv[1][1] == 't')
     {
-      nParties = 5;
-      setSize = 1 << 5;
+      nParties = 3;
+      setSize = 1 << 4;
       std::cout << nParties << " " << setSize << " " << 0 << std::endl;
 
       std::vector<std::thread> pThrds(nParties);
@@ -500,7 +647,7 @@ int main(int argc, char **argv)
       {
         pThrds[pIdx] =
             std::thread([&, pIdx]()
-                        { tparty(nParties, setSize, pIdx); });
+                        { classTest(nParties, setSize, pIdx); });
       }
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
         pThrds[pIdx].join();

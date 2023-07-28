@@ -154,6 +154,30 @@ main.cpp.s:
 	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+miniMPSI.o: miniMPSI.cpp.o
+.PHONY : miniMPSI.o
+
+# target to build an object file
+miniMPSI.cpp.o:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI.cpp.o
+.PHONY : miniMPSI.cpp.o
+
+miniMPSI.i: miniMPSI.cpp.i
+.PHONY : miniMPSI.i
+
+# target to preprocess a source file
+miniMPSI.cpp.i:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI.cpp.i
+.PHONY : miniMPSI.cpp.i
+
+miniMPSI.s: miniMPSI.cpp.s
+.PHONY : miniMPSI.s
+
+# target to generate assembly for a file
+miniMPSI.cpp.s:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI.cpp.s
+.PHONY : miniMPSI.cpp.s
+
 perf.o: perf.cpp.o
 .PHONY : perf.o
 
@@ -214,6 +238,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... miniMPSI.o"
+	@echo "... miniMPSI.i"
+	@echo "... miniMPSI.s"
 	@echo "... perf.o"
 	@echo "... perf.i"
 	@echo "... perf.s"
