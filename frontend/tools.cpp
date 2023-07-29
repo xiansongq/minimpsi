@@ -71,7 +71,7 @@ REccPoint vector_to_REccPoint(std::vector<u8> &data)
   }
   catch (const std::runtime_error &e)
   {
-    //std::cout << "生成随机的椭圆曲线" << std::endl;
+    // std::cout << "生成随机的椭圆曲线" << std::endl;
     REllipticCurve curve;
     // If block cannot be converted to REccPoint, create a random REccPoint
     PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
@@ -120,4 +120,47 @@ REccPoint REccPoint_xor_u8(const REccPoint &point, const std::vector<u8> &vecu)
   }
   // 异或后的结果 转为 REccPoint
   return BitVector_to_REccPoint(vs);
+}
+
+oc::Matrix<u8> Matrix_xor(const oc::Matrix<u8> &a, const oc::Matrix<u8> &b)
+{
+
+  if (a.rows() == 0 || b.rows() == 0 || a.cols() == 0 || b.cols() == 0)
+  {
+    std::cout << "Matrix equal zero" << std::endl;
+  }
+  else if (a.rows() != b.rows() || a.cols() != b.cols())
+  {
+    std::cout << "Unequal matrix dimensions" << std::endl;
+  }
+  oc::Matrix<u8> c(a.rows(), a.cols());
+  for (u64 i = 0; i < a.rows(); i++)
+  {
+    for (u64 j = 0; j < a.cols(); j++)
+    {
+      c(i, j) ^= a(i, j) ^ b(i, j);
+    }
+  }
+  return c;
+}
+oc::REccPoint REccPoint_xor(const REccPoint &a, const REccPoint &b)
+{
+  // 首先将 REccPoint 转为BitVector
+  BitVector pa = REccPoint_to_BitVector(a);
+  BitVector pb = REccPoint_to_BitVector(b);
+  BitVector pc = pa ^ pb;
+  return BitVector_to_REccPoint(pc);
+}
+
+std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a)
+{
+  std::vector<u8> ans;
+  for (u64 i = 0; i < a.rows(); i++)
+  {
+    for (u64 j = 0; j < a.cols(); j++)
+    {
+      ans.push_back(a(i, j));
+    }
+  }
+  return ans;
 }

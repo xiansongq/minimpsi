@@ -111,17 +111,27 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
   if (myIdx == 0)
   {
     std::cout << "myIdx: " << myIdx << std::endl;
-
+    // 创建集合
+    std::vector<block> inputs(setSize);
+    for (u64 i = 0; i < expectedIntersection; i++)
+      inputs[i] = prngSet.get<block>();
+    for (u64 i = expectedIntersection; i < setSize; i++)
+      inputs[i] = prng1.get<block>();
     volePSI::miniMPSIReceiver receiver;
-    receiver.nParties = nParties;
-    receiver.myIdx = myIdx;
+    receiver.init(128, 40, nParties, myIdx, setSize, inputs, false);
     macoro::sync_wait(receiver.receive(mPrngs, chls, numThreads));
   }
   else
   {
+    std::cout << "myIdx: " << myIdx << std::endl;
+
+    std::vector<block> inputs(setSize);
+    for (u64 i = 0; i < expectedIntersection; i++)
+      inputs[i] = prngSet.get<block>();
+    for (u64 i = expectedIntersection; i < setSize; i++)
+      inputs[i] = prng1.get<block>();
     volePSI::miniMPSISender sender;
-    sender.nParties = nParties;
-    sender.myIdx = myIdx;
+    sender.init(128, 40, nParties, myIdx, setSize, inputs, false);
     macoro::sync_wait(sender.send(mPrngs, chls, numThreads));
   }
 }
@@ -639,7 +649,7 @@ int main(int argc, char **argv)
     if (argv[1][0] == '-' && argv[1][1] == 't')
     {
       nParties = 3;
-      setSize = 1 << 4;
+      setSize = 1 << 5;
       std::cout << nParties << " " << setSize << " " << 0 << std::endl;
 
       std::vector<std::thread> pThrds(nParties);
