@@ -1,40 +1,4 @@
 #include "tools.h"
-/* Eccpoint to block */
-volePSI::block256 Eccpoint_to_block(REccPoint point)
-{
-  std::array<u8, REccPoint::size> buffer;
-  // Serialize the ECC point to the buffer
-  point.toBytes(buffer.data());
-  // Convert the buffer to a 128-bit block
-  volePSI::block256 encodedBlock;
-  // encodedBlock.set(buffer.data());
-  std::memcpy(&encodedBlock, buffer.data(), sizeof(block));
-  return encodedBlock;
-}
-
-/*
-   先将 point 转 block 再将 block转point 是能够成功转回来的 但是结果不对。。。。
-   会出现精度的损失
- */
-REccPoint block_to_Eccpoint(volePSI::block256 a)
-{
-  std::array<u8, REccPoint::size> buffer;
-  std::memcpy(buffer.data(), &a, sizeof(block));
-  // Deserialize the buffer to an ECC point
-  REccPoint point;
-  try
-  {
-    point.fromBytes(buffer.data());
-  }
-  catch (std::exception &e)
-  {
-    // If block cannot be converted to REccPoint, create a random REccPoint
-    PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
-    // prng.SetSeed(a);
-    point.randomize(prng);
-  }
-  return point;
-}
 
 std::string REccPoint_to_string(const oc::REccPoint &point)
 {
@@ -71,13 +35,14 @@ REccPoint vector_to_REccPoint(std::vector<u8> &data)
   }
   catch (const std::runtime_error &e)
   {
-    // std::cout << "生成随机的椭圆曲线" << std::endl;
+    std::cout << "生成随机的椭圆曲线" << std::endl;
     REllipticCurve curve;
     // If block cannot be converted to REccPoint, create a random REccPoint
     PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
     prng.SetSeed(block(data[0], data[1]));
     // prng.SetSeed(a);
     point.randomize(prng);
+    std::cout << "随机椭圆曲线生成成功" << std::endl;
   }
   return point;
 }
@@ -101,7 +66,21 @@ REccPoint BitVector_to_REccPoint(const BitVector &bv)
   }
 
   REccPoint point;
-  point.fromBytes(bv.data());
+  try
+  {
+    point.fromBytes(bv.data());
+  }
+  catch (const std::runtime_error &e)
+  {
+    std::cout << "生成随机的椭圆曲线" << std::endl;
+    REllipticCurve curve;
+    // If block cannot be converted to REccPoint, create a random REccPoint
+    PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
+    prng.SetSeed(block(bv[0], bv[1]));
+    // prng.SetSeed(a);
+    point.randomize(prng);
+    std::cout << "随机椭圆曲线生成成功" << std::endl;
+  }
   return point;
 }
 
@@ -138,7 +117,7 @@ oc::Matrix<u8> Matrix_xor(const oc::Matrix<u8> &a, const oc::Matrix<u8> &b)
   {
     for (u64 j = 0; j < a.cols(); j++)
     {
-      c(i, j) ^= a(i, j) ^ b(i, j);
+      c(i, j) = a(i, j) ^ b(i, j);
     }
   }
   return c;
@@ -163,4 +142,25 @@ std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a)
     }
   }
   return ans;
+}
+
+void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b)
+{
+  // 首先将vector<u8> 中的值全部异或 只留一个 结果数据
+  u8 ans = 1;
+  for (auto a : b)
+  {
+    ans = ans ^ a;
+  }
+  // 将异或结果转为BitVector
+  BitVector num(ans);
+  // num 与 Matrix 每一行进行异或
+  for (u64 i = 0; i < a.rows(); i++)
+  {
+    // 将每行的每一个数字都与 ans 异或 （不知道正确不 还有待思考...）
+    for (u64 j = 0; j < a.cols(); j++)
+    {
+      a[i][j] = a[i][j] ^ ans;
+    }
+  }
 }

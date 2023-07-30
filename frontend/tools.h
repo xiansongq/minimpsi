@@ -8,10 +8,6 @@
 #include "volePSI/Paxos.h"
 using namespace osuCrypto;
 
-/* Eccpoint to block */
-volePSI::block256 Eccpoint_to_block(REccPoint point);
-/* block to Eccpoint */
-REccPoint block_to_Eccpoint(volePSI::block256 a);
 /* REccPoint to string */
 std::string REccPoint_to_string(const oc::REccPoint &point);
 /* string to REccPoint */
@@ -30,3 +26,5 @@ oc::Matrix<u8> Matrix_xor(const oc::Matrix<u8> &a, const oc::Matrix<u8> &b);
 oc::REccPoint REccPoint_xor(const REccPoint &a, const REccPoint &b);
 /* Matrix to Vector operation */
 std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a);
+/* Matrix xor Vector operation */
+void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b);
