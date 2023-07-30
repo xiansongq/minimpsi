@@ -62,42 +62,46 @@ namespace volePSI
 
         // 解码测试
         val2.resize(setSize, len);
-        MC_AWAIT(chl[0].recv(val2));
+        // MC_AWAIT(chl[0].recv(val2));
         paxos.init(setSize, 64, 3, stasecParam, PaxosParam::Binary, block(0, 0));
         paxos.decode<u8>(inputs, val, pax, 0);
-        // std::cout << "send val size: " << val.size() << std::endl;
         // 接收val
         val2.resize(setSize, len);
-        // if (myIdx == 1)
-        /*         {
-                    for (u64 i = 0; i < setSize; i++)
+        /*         if (myIdx == 1)
+                {
                     {
-                        bool flag = true;
-                        for (u64 j = 0; j < val[i].size(); j++)
+                        for (u64 i = 0; i < setSize; i++)
                         {
-                            if (val[i][j] != val2[i][j])
+                            bool flag = true;
+                            for (u64 j = 0; j < val[i].size(); j++)
                             {
-                                flag = false;
-                                break;
+                                if (val[i][j] != val2[i][j])
+                                {
+                                    flag = false;
+                                    break;
+                                }
                             }
+                            if (flag == true)
+                                std::cout << "i: " << i << " queal" << std::endl;
+                            else
+                                std::cout << "i: " << i << " not equal" << std::endl;
                         }
-                        if (flag == true)
-                            std::cout << "i: " << i << " queal" << std::endl;
-                        else
-                            std::cout << "i: " << i << " not equal" << std::endl;
                     }
                 } */
         // 计算g_(a_i*b_i)
+        // 先不进行零共享值异或 进行测试
+        // Matrix_xor_Vector(val, zeroValue);
         for (u64 i = 0; i < setSize; i++)
         {
             std::vector<u8> vec;
             for (auto a : val[i])
                 vec.push_back(a);
             px[i] = vector_to_REccPoint(vec);
+
             // 计算 g^(b_i*a_i)
             npx[i] = px[i] * ai;
             // 密钥k与 零共享值进行异或
-            npx[i] = REccPoint_xor_u8(npx[i], zeroValue);
+            // npx[i] = REccPoint_xor_u8(npx[i], zeroValue);
         }
         // 进行新的一轮 OKVS打包
         paxos.init(setSize, 64, 3, stasecParam, PaxosParam::Binary, block(0, 0));
@@ -116,31 +120,8 @@ namespace volePSI
         size = paxos.size();
         MC_AWAIT(chl[0].send(size));
         // 发送 pax 向量
-        std::cout << "sender 开始发送OKVS" << std::endl;
-        std::cout << "sender pax size: " << pax2.rows() << " " << pax2.cols() << std::endl;
-        /* 打印一下 pax2 */
-        /*         for (u64 i = 0; i < paxos.size(); i++)
-                {
-                    std::cout << "pax2 i=" << i << std::endl;
-                    for (u64 j = 0; j < len; j++)
-                    {
-                        std::cout << (int)pax2(i, j) << " ";
-                    }
-                    std::cout << std::endl;
-                } */
-        /*         for (u64 j = 0; j < paxos.size(); j++)
-                {
-                    for (u64 k = 0; k < size; k++)
-                    {
-                        macoro::sync_wait(chl[0].send(coproto::copy(pax2(j, k))));
-                    }
-                } */
-
         MC_AWAIT(chl[0].send(coproto::copy(pax2)));
-        std::cout << "pax value: " << (int)pax2(10, 10) << std::endl;
-        std::cout << "sender OKVS发送结束" << std::endl;
         MC_AWAIT(macoro::suspend_always{});
-
         for (u64 i = 0; i < chl.size(); i++)
         {
             if (i != myIdx)
@@ -173,9 +154,11 @@ namespace volePSI
                  allval = std::vector<oc::Matrix<u8>>{},
                  px = std::vector<REccPoint>(setSize),
                  npx = std::vector<REccPoint>(setSize),
+                 allpx = std::vector<std::vector<REccPoint>>(nParties),
                  keymap = std::unordered_multiset<std::string>(setSize * nParties),
                  onevalue = oc::Matrix<u8>{},
                  mvec = std::vector<u8>{},
+                 intersection_size = u64{0},
                  thrds = std::vector<std::thread>(nParties));
 
         // 生成零共享值
@@ -184,9 +167,6 @@ namespace volePSI
         {
             zeroValue[i] = zeroValue[i] ^ mseed[i].get<u8>();
         }
-        // for (u64 i = 0; i < nParties; i++)
-        //     std::cout << (int)zeroValue[i] << " ";
-        //  std::cout << std::endl;
         // 接收 g_ai
         prng.SetSeed(toBlock(myIdx, myIdx));
         mG = mCrurve.getGenerator();
@@ -213,6 +193,18 @@ namespace volePSI
             mypoint[i] = mG * nSeeds[i]; // g^ri
             values[i] = REccPoint_to_Vector(mypoint[i]);
         }
+        // 测试一下 Point 与 vector 之间互转的成功性
+        // for (u64 i = 0; i < setSize; i++)
+        // {
+        //     std::vector<u8> nm = REccPoint_to_Vector(mypoint[i]);
+        //     REccPoint rc = vector_to_REccPoint(nm);
+        //     if (rc == mypoint[i])
+        //         std::cout << "True"
+        //                   << " " << i << std::endl;
+        //     else
+        //         std::cout << "False"
+        //                   << " " << i << std::endl;
+        // }
         len = values[0].size();
         val.resize(setSize, len);
         for (int i = 0; i < setSize; i++)
@@ -225,7 +217,9 @@ namespace volePSI
                 val(i, j) = values[i][j];
             }
         }
-        // OKVS 打包
+
+        // REccPoint_xor_Test(mypoint[1], zeroValue);
+        //  OKVS 打包
         paxos.init(setSize, 64, 3, stasecParam, PaxosParam::Binary, block(0, 0));
         pax.resize(paxos.size(), len);
         paxos.solve<u8>(inputs, val, pax, nullptr);
@@ -237,16 +231,14 @@ namespace volePSI
             macoro::sync_wait(chl[i].send(len));
         for (u64 i = 1; i < nParties; i++)
             macoro::sync_wait(chl[i].send(coproto::copy(pax)));
-        val[3][4] = 100;
-        for (u64 i = 1; i < nParties; i++)
-            macoro::sync_wait(chl[i].send(coproto::copy(val)));
+        // for (u64 i = 1; i < nParties; i++)
+        //     macoro::sync_wait(chl[i].send(coproto::copy(val)));
         // 创建一个全是1的Matrix
         onevalue.resize(setSize, len);
         for (u64 i = 0; i < setSize; i++)
             for (u64 j = 0; j < len; j++)
                 onevalue(i, j) = 1;
-        // 可能需要先接收其他所有用户paxos size
-
+        // 接收其他参与方的OKVS
         for (u64 i = 1; i < nParties; i++)
         {
             size_t size = 0;
@@ -263,23 +255,39 @@ namespace volePSI
             oc::Matrix<u8> val3(setSize, len);
             // Baxos paxos1;
             // paxos1.init(setSize, 64, 3, stasecParam, PaxosParam::Binary, block(0, 0));
-            std::cout << "inputs size: " << inputs.size() << std::endl;
-            std::cout << "val3 size: " << val3.rows() << std::endl;
-            std::cout << "setSize size: " << setSize << std::endl;
 
             paxos.decode<u8>(inputs, val3, pax2, 0);
-            // 进行异或运算
-            if (i == 1)
-                val2 = Matrix_xor(onevalue, val3);
-            else
+            // 将其转为REccPoint 再进行异或运算
+            allpx[i].reserve(setSize);
+            for (u64 k = 0; k < val3.rows(); k++)
             {
-                val2 = Matrix_xor(val2, val3);
+                std::vector<u8> tem(val3[k].size());
+                for (u64 j = 0; j < val3.cols(); j++)
+                {
+                    tem[j] = val3[k][j];
+                }
+                allpx[i][k] = vector_to_REccPoint(tem);
+            }
+            // 进行异或运算
+            // if (i == 1)
+            //     val2 = Matrix_xor(onevalue, val3);
+            // else
+            // {
+            //     val2 = Matrix_xor(val2, val3);
+            // }
+        }
+        // 进行异或运算 最后的结果保存在 allpx 的第一行
+        for (u64 j = 0; j < allpx[0].size(); j++) // 遍历每一列
+        {
+            for (u64 i = 1; i < allpx.size(); i++) // 从第二行开始遍历，跳过第一行
+            {
+                allpx[0][j] = allpx[0][j] + allpx[i][j]; // 将第 i 行第 j 列的元素加到第一行第 j 列上
             }
         }
         // 最后解码的结果 还需要异或上 零共享值
         /* 这一步主要是计算从所有其他参与方接收到的OKVS异或后的结果 再与leader 零共享值的异或 */
-        Matrix_xor_Vector(val2, zeroValue);
-        // 先将matrix 恢复为REccPoint 在与 零共享值异或
+        // Matrix_xor_Vector(val2, zeroValue);
+        //  先将matrix 恢复为REccPoint 在与 零共享值异或
         /* 打印一下zeroValue */
         /*       for (u64 i = 0; i < setSize; i++)
               {
@@ -294,7 +302,6 @@ namespace volePSI
                   // std::cout <<"i: "<<i<< npx[i] << std::endl;
               } */
         // 生成所有的密钥k 集合
-
         for (u64 i = 0; i < setSize; i++)
         {
 
@@ -303,17 +310,59 @@ namespace volePSI
             {
                 userkey[j] = (akrandom[j] * nSeeds[i]);
             }
-            REccPoint tem;
-            for (u64 j = 1; j < userkey.size(); j++)
+            // 进行异或运算
+            for (u64 k = 2; k < userkey.size(); k++)
             {
-                if (j == 0)
-                    tem = REccPoint_xor(userkey[j], userkey[j + 1]);
-                else
-                    tem = REccPoint_xor(userkey[j], tem);
+                userkey[1] = userkey[1] + userkey[k];
             }
-            keymap.insert(REccPoint_to_string(tem));
+            // REccPoint tem;
+            // for (u64 j = 1; j < userkey.size(); j++)
+            // {
+            //     if (j == 0)
+            //         tem = REccPoint_xor(userkey[j], userkey[j + 1]);
+            //     else
+            //         tem = REccPoint_xor(userkey[j], tem);
+            // }
+            // std::cout << "tem i: " << i << "  " << tem << std::endl;
+            // std::cout << "tem: " << i << "  " << REccPoint_to_string(tem) << std::endl;
+            std::cout << "到这里一切正常" << std::endl;
+
+            for (u64 j = 0; j < setSize; j++)
+            {
+                if (userkey[1] == allpx[0][j])
+                    std::cout << "True" << std::endl;
+                else
+                    std::cout << "False" << std::endl;
+            }
+            keymap.insert(REccPoint_to_string(userkey[1]));
         }
         std::cout << "keymap size: " << keymap.size() << std::endl;
+        // 求交集
+        // for (u64 i = 0; i < allpx[0].size(); i++)
+        // {
+        //     std::string str;
+        //     // std::vector<u8> rc(val2[i].size());
+        //     // for (u64 j = 0; j < val2.cols(); j++)
+        //     // {
+        //     //     // str += std::to_string(val2(i, j));
+        //     //     rc[j] = val2(i, j);
+        //     // }
+        //     // REccPoint po = vector_to_REccPoint(rc);
+        //     // std::cout << "po i: " << i << "  " << po << std::endl;
+        //     str = REccPoint_to_string(allpx[0][i]);
+        //     // std::cout << "str: " << i << " " << str << std::endl;
+        //     auto it = keymap.find(str);
+        //     if (it != keymap.end())
+        //     {
+        //         intersection_size++;
+        //         std::cout << "Found: " << *it << std::endl;
+        //     }
+        //     else
+        //     {
+        //         std::cout << "Not found" << std::endl;
+        //     }
+        // }
+        // std::cout << "intersectionsize size=" << intersection_size << std::endl;
         for (u64 i = 0; i < chl.size(); i++)
         {
             if (i != myIdx)

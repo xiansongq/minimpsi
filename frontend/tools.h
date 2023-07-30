@@ -28,3 +28,4 @@ oc::REccPoint REccPoint_xor(const REccPoint &a, const REccPoint &b);
 std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a);
 /* Matrix xor Vector operation */
 void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b);
+void REccPoint_xor_Test(REccPoint point, std::vector<u8> zeroshare);
