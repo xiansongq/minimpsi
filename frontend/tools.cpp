@@ -16,7 +16,21 @@ REccPoint string_to_REccPoint(const std::string &str)
   std::array<uint8_t, oc::REccPoint::size> buffer;
   std::copy(str.begin(), str.end(), buffer.begin());
   oc::REccPoint point;
-  point.fromBytes(buffer.data());
+  try
+  {
+    point.fromBytes(buffer.data());
+  }
+  catch (const std::runtime_error &e)
+  {
+    // std::cout << "生成随机的椭圆曲线" << std::endl;
+    REllipticCurve curve;
+    // If block cannot be converted to REccPoint, create a random REccPoint
+    PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
+    prng.SetSeed(block(str[0] - '0', str[1] - '0'));
+    // prng.SetSeed(a);
+    point.randomize(prng);
+    // std::cout << "随机椭圆曲线生成成功" << std::endl;
+  }
   return point;
 }
 
@@ -33,16 +47,18 @@ REccPoint vector_to_REccPoint(std::vector<u8> &data)
   {
     point.fromBytes(data.data());
   }
-  catch (const std::runtime_error &e)
+  catch (const std::exception &e)
   {
-    // std::cout << "生成随机的椭圆曲线" << std::endl;
     REllipticCurve curve;
     // If block cannot be converted to REccPoint, create a random REccPoint
-    PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
-    prng.SetSeed(block(data[0], data[1]));
-    // prng.SetSeed(a);
-    point.randomize(prng);
-    // std::cout << "随机椭圆曲线生成成功" << std::endl;
+    // PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
+    // PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
+    PRNG prng;
+    std::random_device rd; // 获取真随机数设备
+    prng.SetSeed(block(rd(), rd()));
+    REccNumber num;
+    num.randomize(prng);
+    point = curve.getGenerator() * num;
   }
   return point;
 }
@@ -165,20 +181,27 @@ void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b)
   }
 }
 
-void REccPoint_xor_Test(REccPoint point, std::vector<u8> zeroshare)
+// void REccPoint_xor_Test(REccPoint point, std::vector<u8> zeroshare)
+// {
+//   // 首先测试 REccPoint 转为u8 异或
+//   std::vector<u8> vec(point.sizeBytes());
+//   vec = REccPoint_to_Vector(point);
+//   oc::Matrix<u8> ts(1, vec.size());
+//   for (u64 i = 0; i < vec.size(); i++)
+//     ts(0, i) = vec[i];
+//   Matrix_xor_Vector(ts, zeroshare);
+//   for (u64 i = 0; i < vec.size(); i++)
+//     vec[i] = ts(0, i);
+//   REccPoint po = vector_to_REccPoint(vec);
+//   std::cout << "po: " << po << std::endl;
+//   // vec = REccPoint_to_Vector(point);
+//   REccPoint pot = REccPoint_xor_u8(point, zeroshare);
+//   std::cout << "pot: " << pot << std::endl;
+// }
+
+void PrintLine(char c)
 {
-  // 首先测试 REccPoint 转为u8 异或
-  std::vector<u8> vec(point.sizeBytes());
-  vec = REccPoint_to_Vector(point);
-  oc::Matrix<u8> ts(1, vec.size());
-  for (u64 i = 0; i < vec.size(); i++)
-    ts(0, i) = vec[i];
-  Matrix_xor_Vector(ts, zeroshare);
-  for (u64 i = 0; i < vec.size(); i++)
-    vec[i] = ts(0, i);
-  REccPoint po = vector_to_REccPoint(vec);
-  std::cout << "po: " << po << std::endl;
-  // vec = REccPoint_to_Vector(point);
-  REccPoint pot = REccPoint_xor_u8(point, zeroshare);
-  std::cout << "pot: " << pot << std::endl;
+  int count = 50;
+  std::string line = std::string(count, c);
+  std::cout << line << std::endl;
 }

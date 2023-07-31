@@ -1,47 +1,31 @@
 {
-    "version": 2,
-    "configurePresets": [
-        {
-            "name": "volepsi",
-            "displayName": "GCC 9.4.0 x86_64-linux-gnu",
-            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-                "CMAKE_C_COMPILER": "/usr/bin/gcc",
-                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "linux",
+      "displayName": "Linux",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FETCH_AUTO": true,
+        "FETCH_SPARSEHASH": true,
+        "FETCH_LIBDIVIDE": true,
+        "VOLE_PSI_ENABLE_ASAN": true,
+        "VOLE_PSI_ENABLE_BOOST": true,
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [
+            "Linux"
+          ]
         },
-        {
-            "name": "tool",
-            "displayName": "Configure preset using toolchain file",
-            "description": "Sets Ninja generator, build and install directory",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_TOOLCHAIN_FILE": "",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
-            }
-        },
-        {
-            "name": "tool",
-            "displayName": "Custom configure preset",
-            "description": "Sets Ninja generator, build and install directory",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
-            }
+        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+          "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
         }
-    ],
-    "buildPresets": [
-        {
-            "name": "tool",
-            "description": "",
-            "displayName": ""
-        }
-    ]
+      }
+    }
+  ]
 }

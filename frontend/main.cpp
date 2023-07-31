@@ -34,7 +34,7 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
   u64 numThreads = 1;
   u64 leadIdx = 0;
   // 期望交集
-  u64 expectedIntersection = 10;
+  u64 expectedIntersection = 3;
   std::vector<oc::Socket> chls(nParties);
   for (u64 i = 0; i < nParties; ++i)
   {
@@ -43,9 +43,9 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
       u32 port = 1200 + i * 100 + myIdx;
       // chls[i].resize(numThreads);
       std::string ip = "localhost:" + std::to_string(port);
-      std::cout << "ip: " << ip << std::endl;
-      // chls[i] = coproto::asioConnect(ip, 1);
-      // chls[i].resize(numThreads);
+      // std::cout << "ip: " << ip << std::endl;
+      //  chls[i] = coproto::asioConnect(ip, 1);
+      //  chls[i].resize(numThreads);
       chls[i] = coproto::asioConnect(ip, 0);
       /*       for (u64 j = 0; j < numThreads; j++)
             {
@@ -64,8 +64,8 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
       u32 port = 1200 + myIdx * 100 + i; // get the same port; i=2 & pIdx=1 =>port=102
                                          // chls[i].resize(numThreads);
       std::string ip = "localhost:" + std::to_string(port);
-      std::cout << "ip: " << ip << std::endl;
-      // chls[i] = coproto::asioConnect(ip, 0);
+      // std::cout << "ip: " << ip << std::endl;
+      //  chls[i] = coproto::asioConnect(ip, 0);
       chls[i] = coproto::asioConnect(ip, 1);
       /*       chls[i].resize(numThreads);
             for (u64 j = 0; j < numThreads; j++)
@@ -110,26 +110,36 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
   }
   if (myIdx == 0)
   {
-    std::cout << "myIdx: " << myIdx << std::endl;
     // 创建集合
     std::vector<block> inputs(setSize);
     for (u64 i = 0; i < expectedIntersection; i++)
       inputs[i] = prngSet.get<block>();
+    prng1.SetSeed(block(myIdx, myIdx));
     for (u64 i = expectedIntersection; i < setSize; i++)
       inputs[i] = prng1.get<block>();
+    std::cout << "inputs" << std::endl;
+    for (auto a : inputs)
+    {
+      std::cout << a << std::endl;
+    }
     volePSI::miniMPSIReceiver receiver;
     receiver.init(128, 40, nParties, myIdx, setSize, inputs, false);
     macoro::sync_wait(receiver.receive(mPrngs, chls, numThreads));
   }
   else
   {
-    std::cout << "myIdx: " << myIdx << std::endl;
 
     std::vector<block> inputs(setSize);
     for (u64 i = 0; i < expectedIntersection; i++)
       inputs[i] = prngSet.get<block>();
+    prng1.SetSeed(block(myIdx, myIdx));
     for (u64 i = expectedIntersection; i < setSize; i++)
       inputs[i] = prng1.get<block>();
+    std::cout << "inputs" << std::endl;
+    for (auto a : inputs)
+    {
+      std::cout << a << std::endl;
+    }
     volePSI::miniMPSISender sender;
     sender.init(128, 40, nParties, myIdx, setSize, inputs, false);
     macoro::sync_wait(sender.send(mPrngs, chls, numThreads));
@@ -649,7 +659,7 @@ int main(int argc, char **argv)
     if (argv[1][0] == '-' && argv[1][1] == 't')
     {
       nParties = 3;
-      setSize = 1 << 5;
+      setSize = 1 << 3;
       std::cout << nParties << " " << setSize << " " << 0 << std::endl;
 
       std::vector<std::thread> pThrds(nParties);
