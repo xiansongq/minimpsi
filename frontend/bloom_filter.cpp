@@ -118,7 +118,7 @@ namespace volePSI
     {
         size_t bit_index[hash_num];
 
-#pragma omp parallel for num_threads(thread_count)
+#pragma omp parallel for num_threads(6)
         for (auto i = 0; i < hash_num; i++)
         {
             bit_index[i] = FastKeyedHash(vec_salt[i], input, LEN) % table_size;
@@ -136,7 +136,7 @@ namespace volePSI
         bool CONTAIN = true; // assume input in filter at the beginning
         std::vector<size_t> bit_index(hash_num);
         std::vector<size_t> local_bit_index(hash_num);
-#pragma omp parallel for num_threads(thread_count)
+#pragma omp parallel for num_threads(6)
         for (auto i = 0; i < hash_num; i++)
         {
             if (CONTAIN == true)
@@ -151,6 +151,7 @@ namespace volePSI
         }
         return CONTAIN;
     }
+
     template <typename ElementType>
     bool BloomFilter::Contain(const ElementType &element) const
     {
@@ -169,7 +170,7 @@ namespace volePSI
 
     void BloomFilter::Insert(const std::vector<std::vector<u8>> &str)
     {
-#pragma omp parallel for num_threads(thread_count)
+#pragma omp parallel for num_threads(6)
         for (auto i = 0; i < str.size(); i++)
         {
             unsigned char buffer[str[i].size()];
@@ -205,7 +206,7 @@ namespace volePSI
     template <class T, class Allocator, template <class, class> class Container>
     void BloomFilter ::Insert(const Container<T, Allocator> &container)
     {
-#pragma omp parallel for num_threads(thread_count)
+#pragma omp parallel for num_threads(6)
         for (auto i = 0; i < container.size(); i++)
         {
             Insert(container[i]);
@@ -217,7 +218,7 @@ namespace volePSI
         a.toBytes(buffer);
         return PlainContain(buffer, a.sizeBytes());
     }
-    std::vector<u8> BloomFilter::Contain(const std::vector<REccPoint> &vec_p) const
+    std::vector<u8> BloomFilter::Contain(const std::vector<REccPoint> &vec_p)
     {
         size_t LEN = vec_p.size();
         std::vector<u8> vec_indication_bit(LEN);
@@ -229,12 +230,13 @@ namespace volePSI
         }
         return vec_indication_bit;
     }
+
     template <class T, class Allocator, template <class, class> class Container>
     std::vector<u8> BloomFilter::Contain(const Container<T, Allocator> &container)
     {
         size_t LEN = container.size();
         std::vector<u8> vec_indication_bit(LEN);
-#pragma omp parallel for num_threads(thread_count)
+#pragma omp parallel for num_threads(6)
         for (auto i = 0; i < container.size(); i++)
         {
             if (Contain(container[i]) == true)
@@ -250,7 +252,7 @@ namespace volePSI
         size_t LEN = vec_A.size();
         std::vector<u8> vec_indication_bit(LEN);
 
-#pragma omp parallel for num_threads(thread_count)
+#pragma omp parallel for num_threads(6)
         for (auto i = 0; i < vec_A.size(); i++)
         {
             // to buffer
@@ -289,8 +291,7 @@ namespace volePSI
         PrintLine('-');
         std::cout << "BloomFilter Status:" << std::endl;
         std::cout << "inserted element num = " << inserted_element_num << std::endl;
-        std::cout << "hashtable size = " << (bit_table.size() >> 10) << " KB\n"
-                  << std::endl;
+        std::cout << "hashtable size = " << (bit_table.size() >> 10) << " KB" << std::endl;
         std::cout << "bits per element = " << double(bit_table.size()) * 8 / inserted_element_num << std::endl;
         PrintLine('-');
     }

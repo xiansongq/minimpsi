@@ -26,7 +26,6 @@ namespace volePSI
 	using i8 = oc::i8;
 
 	using block = oc::block;
-
 	template <typename T>
 	using span = oc::span<T>;
 	template <typename T>

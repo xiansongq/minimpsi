@@ -130,6 +130,30 @@ frontend/fast:
 	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/build
 .PHONY : frontend/fast
 
+bloom_filter.o: bloom_filter.cpp.o
+.PHONY : bloom_filter.o
+
+# target to build an object file
+bloom_filter.cpp.o:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/bloom_filter.cpp.o
+.PHONY : bloom_filter.cpp.o
+
+bloom_filter.i: bloom_filter.cpp.i
+.PHONY : bloom_filter.i
+
+# target to preprocess a source file
+bloom_filter.cpp.i:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/bloom_filter.cpp.i
+.PHONY : bloom_filter.cpp.i
+
+bloom_filter.s: bloom_filter.cpp.s
+.PHONY : bloom_filter.s
+
+# target to generate assembly for a file
+bloom_filter.cpp.s:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/bloom_filter.cpp.s
+.PHONY : bloom_filter.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -177,6 +201,30 @@ miniMPSI.s: miniMPSI.cpp.s
 miniMPSI.cpp.s:
 	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI.cpp.s
 .PHONY : miniMPSI.cpp.s
+
+murmurhash3.o: murmurhash3.cpp.o
+.PHONY : murmurhash3.o
+
+# target to build an object file
+murmurhash3.cpp.o:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/murmurhash3.cpp.o
+.PHONY : murmurhash3.cpp.o
+
+murmurhash3.i: murmurhash3.cpp.i
+.PHONY : murmurhash3.i
+
+# target to preprocess a source file
+murmurhash3.cpp.i:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/murmurhash3.cpp.i
+.PHONY : murmurhash3.cpp.i
+
+murmurhash3.s: murmurhash3.cpp.s
+.PHONY : murmurhash3.s
+
+# target to generate assembly for a file
+murmurhash3.cpp.s:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/murmurhash3.cpp.s
+.PHONY : murmurhash3.cpp.s
 
 perf.o: perf.cpp.o
 .PHONY : perf.o
@@ -235,12 +283,18 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... frontend"
+	@echo "... bloom_filter.o"
+	@echo "... bloom_filter.i"
+	@echo "... bloom_filter.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
 	@echo "... miniMPSI.o"
 	@echo "... miniMPSI.i"
 	@echo "... miniMPSI.s"
+	@echo "... murmurhash3.o"
+	@echo "... murmurhash3.i"
+	@echo "... murmurhash3.s"
 	@echo "... perf.o"
 	@echo "... perf.i"
 	@echo "... perf.s"

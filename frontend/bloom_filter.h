@@ -45,7 +45,7 @@ namespace volePSI
 
         bool Contain(const REccPoint &a) const;
 
-        std::vector<u8> Contain(const std::vector<REccPoint> &vec_p) const;
+        std::vector<u8> Contain(const std::vector<REccPoint> &vec_p) ;
 
         template <class T, class Allocator, template <class, class> class Container>
         std::vector<u8> Contain(const Container<T, Allocator> &container);

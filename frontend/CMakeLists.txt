@@ -2,8 +2,9 @@
 file(GLOB_RECURSE SRCS *.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/frontend/)
 add_executable(frontend  ${SRCS})
-
-target_link_libraries(frontend volePSI)
+FIND_PACKAGE(OpenMP REQUIRED)
+## OpenMP::OpenMP_CXX
+target_link_libraries(frontend volePSI )
 
 
 if(VOLE_PSI_NO_LTO)

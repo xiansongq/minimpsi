@@ -1,11 +1,11 @@
 #pragma once
+
 /* 这里包含一些 基础的工具函数 */
 
 #include "cryptoTools/Common/block.h"
 #include "cryptoTools/Crypto/RCurve.h"
 #include <iostream>
 #include <random>
-// #include "volePSI/PaxosImpl.h"
 #include "volePSI/Paxos.h"
 using namespace osuCrypto;
 
@@ -13,7 +13,9 @@ using namespace osuCrypto;
 std::string REccPoint_to_string(const oc::REccPoint &point);
 /* string to REccPoint */
 REccPoint string_to_REccPoint(const std::string &str);
+/* REccPoint to Vector<u8> */
 std::vector<u8> REccPoint_to_Vector(const REccPoint &point);
+/* vector<u8> to REccPoint  */
 REccPoint vector_to_REccPoint(std::vector<u8> &data);
 /* REccPoint to bitvector */
 BitVector REccPoint_to_BitVector(const REccPoint &point);
@@ -29,6 +31,5 @@ oc::REccPoint REccPoint_xor(const REccPoint &a, const REccPoint &b);
 std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a);
 /* Matrix xor Vector operation */
 void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b);
-void REccPoint_xor_Test(REccPoint point, std::vector<u8> zeroshare);
 /* output char line */
 void PrintLine(char c);
