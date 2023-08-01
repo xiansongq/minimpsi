@@ -112,11 +112,13 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
   {
     // 创建集合
     std::vector<block> inputs(setSize);
-    for (u64 i = 0; i < expectedIntersection; i++)
+    for (u64 i = 1; i < expectedIntersection + 1; i++)
       inputs[i] = prngSet.get<block>();
     prng1.SetSeed(block(myIdx, myIdx));
-    for (u64 i = expectedIntersection; i < setSize; i++)
+    for (u64 i = expectedIntersection + 1; i < setSize; i++)
       inputs[i] = prng1.get<block>();
+    inputs[0] = prng1.get<block>();
+
     std::cout << "inputs" << std::endl;
     for (auto a : inputs)
     {
@@ -130,11 +132,13 @@ void classTest(u64 nParties, u64 setSize, u64 myIdx)
   {
 
     std::vector<block> inputs(setSize);
-    for (u64 i = 0; i < expectedIntersection; i++)
+    for (u64 i = 1; i < expectedIntersection + 1; i++)
       inputs[i] = prngSet.get<block>();
     prng1.SetSeed(block(myIdx, myIdx));
-    for (u64 i = expectedIntersection; i < setSize; i++)
+    for (u64 i = expectedIntersection + 1; i < setSize; i++)
       inputs[i] = prng1.get<block>();
+    inputs[0] = prng1.get<block>();
+
     std::cout << "inputs" << std::endl;
     for (auto a : inputs)
     {

@@ -12,6 +12,7 @@
 #include <cassert>
 #include <thread>
 #include <unordered_set>
+#include <bloom_filter.h>
 using namespace osuCrypto;
 using namespace volePSI;
 namespace volePSI
@@ -49,6 +50,8 @@ namespace volePSI
         REccNumber ai;
         REccPoint g_ai;
         u8 *tempbuf;
+        volePSI::BloomFilter Filter;
+        // oc::PRNG *prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
 
         Proto receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads);
         void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize, std::vector<block> inputs, bool malicious);

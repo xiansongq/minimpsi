@@ -2,7 +2,7 @@
 
 std::string REccPoint_to_string(const oc::REccPoint &point)
 {
-  std::array<uint8_t, oc::REccPoint::size> buffer;
+  std::array<u8, oc::REccPoint::size> buffer;
   point.toBytes(buffer.data());
   std::string result(buffer.begin(), buffer.end());
   return result;
@@ -13,7 +13,7 @@ REccPoint string_to_REccPoint(const std::string &str)
   {
     throw std::invalid_argument("Invalid string size for REccPoint conversion.");
   }
-  std::array<uint8_t, oc::REccPoint::size> buffer;
+  std::array<u8, oc::REccPoint::size> buffer;
   std::copy(str.begin(), str.end(), buffer.begin());
   oc::REccPoint point;
   try

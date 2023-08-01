@@ -1,31 +1,31 @@
-{
-  "version": 2,
-  "configurePresets": [
-    {
-      "name": "linux",
-      "displayName": "Linux",
-      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "FETCH_AUTO": true,
-        "FETCH_SPARSEHASH": true,
-        "FETCH_LIBDIVIDE": true,
-        "VOLE_PSI_ENABLE_ASAN": true,
-        "VOLE_PSI_ENABLE_BOOST": true,
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [
-            "Linux"
-          ]
-        },
-        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-          "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
-        }
-      }
-    }
-  ]
-}
+// {
+//   "version": 2,
+//   "configurePresets": [
+//     {
+//       "name": "linux",
+//       "displayName": "Linux",
+//       "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
+//       "generator": "Ninja",
+//       "binaryDir": "${sourceDir}/out/build/${presetName}",
+//       "cacheVariables": {
+//         "CMAKE_BUILD_TYPE": "Release",
+//         "FETCH_AUTO": true,
+//         "FETCH_SPARSEHASH": true,
+//         "FETCH_LIBDIVIDE": true,
+//         "VOLE_PSI_ENABLE_ASAN": true,
+//         "VOLE_PSI_ENABLE_BOOST": true,
+//         "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+//       },
+//       "vendor": {
+//         "microsoft.com/VisualStudioSettings/CMake/1.0": {
+//           "hostOS": [
+//             "Linux"
+//           ]
+//         },
+//         "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+//           "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
+//         }
+//       }
+//     }
+//   ]
+// }
