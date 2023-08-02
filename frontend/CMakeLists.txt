@@ -4,7 +4,7 @@ include_directories(${CMAKE_SOURCE_DIR}/frontend/)
 add_executable(frontend  ${SRCS})
 FIND_PACKAGE(OpenMP REQUIRED)
 ## OpenMP::OpenMP_CXX
-target_link_libraries(frontend volePSI )
+target_link_libraries(frontend volePSI OpenMP::OpenMP_CXX)
 
 
 if(VOLE_PSI_NO_LTO)
