@@ -259,28 +259,21 @@ namespace volePSI
             }
         }
         // The final result of the XOR operation is saved in the second row of allpx
-        // #pragma omp parallel for num_threads(numThreads)
-
+        // Insert the XOR operation result into the bloom filter
+        // The time cost of using bloom filter is almost equal to that of using unordered_multiset
+        std::unordered_multiset<std::string> result(setSize);
         for (u64 j = 0; j < allpx[1].size(); j++)
         {
             // #pragma omp parallel for num_threads(numThreads)
-
             for (u64 i = 2; i < allpx.size(); i++)
             {
                 allpx[1][j] = allpx[1][j] + allpx[i][j];
             }
+            allpx[1][j] = REccPoint_xor_u8(allpx[1][j], zeroValue);
         }
-
-        // Insert the XOR operation result into the bloom filter
-        Filter.init(setSize, stasecParam);
-        for (u64 i = 0; i < setSize; i++)
-        {
-            allpx[1][i] = REccPoint_xor_u8(allpx[1][i], zeroValue);
-            Filter.Insert(allpx[1][i]);
-        }
-        Filter.PrintInfo();
 
         // create the key set for leader
+        // This loop code has a high time cost and needs to be optimized 
         for (u64 i = 0; i < setSize; i++)
         {
             std::vector<REccPoint> userkey(nParties);
@@ -295,20 +288,17 @@ namespace volePSI
             {
                 userkey[1] = userkey[1] + userkey[k];
             }
-            allkey.push_back(userkey[1]);
+            result.insert(REccPoint_to_string(userkey[1]));
         }
-        // compute the intersection
-        intersection_bit = Filter.Contain(allkey);
-        // #pragma omp parallel for num_threads(numThreads)
-
-        for (u64 i = 0; i < intersection_bit.size(); i++)
+        for (u64 i = 0; i < setSize; i++)
         {
-            if (intersection_bit[i] == 1)
+            auto it = result.find(REccPoint_to_string(allpx[1][i]));
+            if (it != result.end())
+            {
                 outputs.push_back(reinputs[i]);
+            }
         }
         timer.setTimePoint("miniMPSI::reciver end");
-
-        std::cout << "intersection size: " << outputs.size() << std::endl;
         std::cout << timer << std::endl;
         // for (u64 i = 0; i < outputs.size(); i++)
         // {

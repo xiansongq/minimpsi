@@ -45,7 +45,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious
       StaParam = 40;
   if (flag == 1 || (flag == 0 && myIdx == 0))
     PrintParamInfo(nParties, setSize, SecParam, StaParam, malicious);
-  u64 expectedIntersection = 200;
+  u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
   for (u64 i = 0; i < nParties; ++i)
   {
@@ -95,22 +95,23 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious
   }
   if (myIdx == 0)
   {
-    // 创建集合
+    // create input sets
     std::vector<block> inputs(setSize);
+    // The first element cannot be an intersection element
     for (u64 i = 1; i < expectedIntersection + 1; i++)
       inputs[i] = prngSet.get<block>();
     prng1.SetSeed(block(myIdx, myIdx));
     for (u64 i = expectedIntersection + 1; i < setSize; i++)
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
+
     volePSI::miniMPSIReceiver_re receiver;
-    receiver.init(128, 40, nParties, myIdx, setSize, inputs, true, num_Threads);
+    receiver.init(128, 40, nParties, myIdx, setSize, inputs, malicious, num_Threads);
     std::vector<block> ans = (receiver.receive(mPrngs, chls, num_Threads));
     std::cout << "instersection size is " << ans.size() << std::endl;
   }
   else
   {
-
     std::vector<block> inputs(setSize);
     for (u64 i = 1; i < expectedIntersection + 1; i++)
       inputs[i] = prngSet.get<block>();
@@ -119,7 +120,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
     volePSI::miniMPSISender_re sender;
-    sender.init(128, 40, nParties, myIdx, setSize, inputs, true, num_Threads);
+    sender.init(128, 40, nParties, myIdx, setSize, inputs, malicious, num_Threads);
     (sender.send(mPrngs, chls, num_Threads));
   }
 }
@@ -324,9 +325,9 @@ int main(int argc, char **argv)
   case 2:
     if (argv[1][0] == '-' && argv[1][1] == 'u')
     {
-      nParties = 3;
+      nParties = 10;
       setSize = 1 << 9;
-      numthreads = 6;
+      numthreads = 4;
 
       std::vector<std::thread> pThrds(nParties);
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
