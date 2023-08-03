@@ -34,7 +34,7 @@ namespace volePSI
         REccPoint g_ai;
         u8 *tempbuf;
         Timer timer;
-        Proto send(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads);
+        void send(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads);
         void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize, std::vector<block> inputs, bool malicious, u64 numThreads);
     };
     class miniMPSIReceiver : public oc ::TimerAdapter
@@ -55,8 +55,7 @@ namespace volePSI
         volePSI::BloomFilter Filter;
         std::vector<block> outputs;
         Timer timer;
-        Proto receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads);
+        std::vector<block> receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads);
         void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize, std::vector<block> inputs, bool malicious, u64 numThreads);
-        std::vector<block> getOutput();
     };
 }

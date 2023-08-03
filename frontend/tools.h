@@ -7,6 +7,8 @@
 #include <iostream>
 #include <random>
 #include "volePSI/Paxos.h"
+#include "relic/relic.h"
+#include "relic/relic_core.h"
 using namespace osuCrypto;
 
 /* REccPoint to string */

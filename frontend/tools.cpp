@@ -40,9 +40,70 @@ std::vector<u8> REccPoint_to_Vector(const REccPoint &point)
   point.toBytes(result.data());
   return result;
 }
+
 REccPoint vector_to_REccPoint(std::vector<u8> &data)
 {
+  u64 len = data.size();
   REccPoint point;
+  // err_t e;
+  // ep_st *a;
+  // int elen = point.sizeBytes();
+  // RLC_TRY
+  // {
+  //   // try
+  //   // {
+  //   ep_read_bin(a, data.data(), elen);
+  //   // point.fromBytes(data.data());
+  //   //}
+  //   // catch (const std::runtime_error &e)
+  //   // {
+  //   //   std::cout << "34" << std::endl;
+  //   // }
+  // }
+  // RLC_CATCH(e)
+  // {
+  //   std::cout << "12" << std::endl;
+  // }
+
+  // 默认 data len 是足够的
+  if (len == RLC_FP_BYTES + 1)
+  {
+    if (data[0] != 2 && data[0] != 3)
+    {
+      // 生成随机point 返回
+      REllipticCurve curve;
+      PRNG prng;
+      std::random_device rd; // 获取真随机数设备
+      prng.SetSeed(block(rd(), rd()));
+      REccNumber num;
+      num.randomize(prng);
+      point = curve.getGenerator() * num;
+      return point;
+    }
+  }
+  if (len == 2 * RLC_FP_BYTES + 1)
+  {
+    if (data[0] != 4)
+    {
+      // 生成随机point 返回
+      REllipticCurve curve;
+      PRNG prng;
+      std::random_device rd; // 获取真随机数设备
+      prng.SetSeed(block(rd(), rd()));
+      REccNumber num;
+      num.randomize(prng);
+      point = curve.getGenerator() * num;
+      return point;
+    }
+  }
+
+  //   u64 len=data.size();
+
+  //  if (len != (RLC_FP_BYTES + 1) && len != (2 * RLC_FP_BYTES + 1))
+  // 	{
+  // 		std::cout<<"buffer size is error";
+  // 		return ;
+  // 	}
   try
   {
     point.fromBytes(data.data());

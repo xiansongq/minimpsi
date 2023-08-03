@@ -22,7 +22,6 @@
 #include "tools.h"
 #include "volePSI/Paxos.h"
 #include "coproto/Socket/AsioSocket.h"
-#include "miniMPSI_re.h"
 #include "miniMPSI.h"
 using namespace osuCrypto;
 using namespace volePSI;
@@ -47,24 +46,29 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious
     PrintParamInfo(nParties, setSize, SecParam, StaParam, malicious);
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
-  for (u64 i = 0; i < nParties; ++i)
+  std::vector<std::thread> threads(nParties);
+  for (auto idx = 0; idx < threads.size(); idx++)
   {
-    if (i < myIdx)
+    threads[idx] = std::thread([&, idx]()
+                               {
+                                       if (idx < myIdx)
     {
-      u32 port = 1200 + i * 100 + myIdx;
+      u32 port = 1200 + idx * 100 + myIdx;
       std::string ip = "localhost:" + std::to_string(port);
       // std::cout << "ip: " << ip << std::endl;
-      chls[i] = coproto::asioConnect(ip, 0);
+      chls[idx] = coproto::asioConnect(ip, 0);
     }
-    else if (i > myIdx)
+    else if (idx > myIdx)
     {
-      u32 port = 1200 + myIdx * 100 + i; // get the same port; i=2 & pIdx=1 =>port=102
+      u32 port = 1200 + myIdx * 100 + idx; // get the same port; i=2 & pIdx=1 =>port=102
                                          // chls[i].resize(numThreads);
       std::string ip = "localhost:" + std::to_string(port);
       // std::cout << "ip: " << ip << std::endl;
-      chls[i] = coproto::asioConnect(ip, 1);
-    }
+      chls[idx] = coproto::asioConnect(ip, 1);
+    } });
   }
+  for (auto &thrd : threads)
+    thrd.join();
 
   // 首先生成 零共享值
   std::vector<PRNG> mPrngs(nParties);
@@ -105,10 +109,20 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
 
-    volePSI::miniMPSIReceiver_re receiver;
+    volePSI::miniMPSIReceiver receiver;
     receiver.init(128, 40, nParties, myIdx, setSize, inputs, malicious, num_Threads);
     std::vector<block> ans = (receiver.receive(mPrngs, chls, num_Threads));
+    // intersection success rate
+    if (ans.size() != expectedIntersection)
+      std::cout << "excute PSI error" << std::endl;
+    u64 len = 0;
+    for (auto i = 1; i < expectedIntersection + 1; i++)
+    {
+      if (inputs[i] == ans[i - 1])
+        len++;
+    }
     std::cout << "instersection size is " << ans.size() << std::endl;
+    std::cout << "intersection success rate " << std::setprecision(2) << (double)len / expectedIntersection * 100 << "%" << std::endl;
   }
   else
   {
@@ -119,141 +133,11 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious
     for (u64 i = expectedIntersection + 1; i < setSize; i++)
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
-    volePSI::miniMPSISender_re sender;
+    volePSI::miniMPSISender sender;
     sender.init(128, 40, nParties, myIdx, setSize, inputs, malicious, num_Threads);
     (sender.send(mPrngs, chls, num_Threads));
   }
 }
-void tparty(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads)
-{
-
-  // 初始化计算安全参数和 统计安全参数
-  u64 SecParam = 180,
-      StaParam = 40;
-  bool malicious = 0;
-  std::string name("psi");
-  if (myIdx == 0)
-    PrintParamInfo(nParties, setSize, SecParam, StaParam, malicious);
-  IOService ios(0);
-  u64 numThreads = num_Threads;
-  u64 leadIdx = 0;
-  // 期望交集
-  u64 expectedIntersection = 200;
-  std::vector<oc::Socket> chls(nParties);
-  for (u64 i = 0; i < nParties; ++i)
-  {
-    if (i < myIdx)
-    {
-      u32 port = 1200 + i * 100 + myIdx;
-      // chls[i].resize(numThreads);
-      std::string ip = "localhost:" + std::to_string(port);
-      // std::cout << "ip: " << ip << std::endl;
-      //  chls[i] = coproto::asioConnect(ip, 1);
-      //  chls[i].resize(numThreads);
-      chls[i] = coproto::asioConnect(ip, 0);
-      /*       for (u64 j = 0; j < numThreads; j++)
-            {
-              try
-              {
-                chls[i][j] = coproto::asioConnect(ip, 0);
-              }
-              catch (const std::exception &e)
-              {
-                std::cout << "error" << std::endl;
-              }
-            } */
-    }
-    else if (i > myIdx)
-    {
-      u32 port = 1200 + myIdx * 100 + i; // get the same port; i=2 & pIdx=1 =>port=102
-                                         // chls[i].resize(numThreads);
-      std::string ip = "localhost:" + std::to_string(port);
-      // std::cout << "ip: " << ip << std::endl;
-      //  chls[i] = coproto::asioConnect(ip, 0);
-      chls[i] = coproto::asioConnect(ip, 1);
-      /*       chls[i].resize(numThreads);
-            for (u64 j = 0; j < numThreads; j++)
-            {
-              try
-              {
-                chls[i][j] = coproto::asioConnect(ip, 1);
-              }
-              catch (const std::exception &e)
-              {
-                std::cout << "error" << std::endl;
-              }
-            } */
-    }
-  }
-  // 首先生成 零共享值
-  std::vector<PRNG> mPrngs(nParties);
-  std::mutex mtx;
-  PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
-  PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
-  PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
-  std::vector<std::vector<block>> zsSeeds(nParties); // 存储随机种子
-
-  // 为每个用户生成nparties个随机种子
-  for (u64 i = 0; i < nParties; i++)
-  {
-    zsSeeds[i].resize(nParties);
-    for (u64 j = 0; j < nParties; j++)
-    {
-      if (i <= j)
-      {
-        zsSeeds[i][j] = prng0.get<block>();
-      }
-      else
-        zsSeeds[i][j] = zsSeeds[j][i];
-    }
-  }
-  mPrngs.resize(nParties);
-  for (u64 i = 0; i < nParties; i++)
-  {
-    mPrngs[i].SetSeed(zsSeeds[myIdx][i]);
-  }
-  if (myIdx == 0)
-  {
-    // 创建集合
-    std::vector<block> inputs(setSize);
-    for (u64 i = 1; i < expectedIntersection + 1; i++)
-      inputs[i] = prngSet.get<block>();
-    prng1.SetSeed(block(myIdx, myIdx));
-    for (u64 i = expectedIntersection + 1; i < setSize; i++)
-      inputs[i] = prng1.get<block>();
-    inputs[0] = prng1.get<block>();
-
-    // std::cout << "inputs" << std::endl;
-    // for (auto a : inputs)
-    // {
-    //   std::cout << a << std::endl;
-    // }
-    volePSI::miniMPSIReceiver receiver;
-    receiver.init(128, 40, nParties, myIdx, setSize, inputs, false, numThreads);
-    macoro::sync_wait(receiver.receive(mPrngs, chls, numThreads));
-  }
-  else
-  {
-
-    std::vector<block> inputs(setSize);
-    for (u64 i = 1; i < expectedIntersection + 1; i++)
-      inputs[i] = prngSet.get<block>();
-    prng1.SetSeed(block(myIdx, myIdx));
-    for (u64 i = expectedIntersection + 1; i < setSize; i++)
-      inputs[i] = prng1.get<block>();
-    inputs[0] = prng1.get<block>();
-
-    // std::cout << "inputs" << std::endl;
-    // for (auto a : inputs)
-    // {
-    //   std::cout << a << std::endl;
-    // }
-    volePSI::miniMPSISender sender;
-    sender.init(128, 40, nParties, myIdx, setSize, inputs, false, numThreads);
-    macoro::sync_wait(sender.send(mPrngs, chls, numThreads));
-  }
-}
-
 void PrintInfo()
 {
   std::cout << oc::Color::Green
@@ -326,9 +210,9 @@ int main(int argc, char **argv)
     if (argv[1][0] == '-' && argv[1][1] == 'u')
     {
       nParties = 10;
-      setSize = 1 << 9;
+      setSize = 1 << 5;
       numthreads = 4;
-
+      malicious = 0;
       std::vector<std::thread> pThrds(nParties);
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
       {
