@@ -2,6 +2,14 @@
 
 namespace volePSI
 {
+  std::vector<std::thread> getThread(u64 numthreads, u64 setSize)
+  {
+    std::vector<std::thread> threads;
+    if (numthreads > setSize)
+      threads.resize(setSize);
+    else
+      threads.resize(numthreads);
+  }
   void miniMPSISender::init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize, std::vector<block> inputs, bool malicious, u64 numThreads)
   {
     this->secParam = secParam;
@@ -36,6 +44,7 @@ namespace volePSI
     // if malicious mode is enabled
     if (malicious == true)
     {
+      // thrds.clear();
       thrds.resize(setSize);
       for (auto idx = 0; idx < thrds.size(); idx++)
       {
@@ -149,15 +158,16 @@ namespace volePSI
     timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " end");
 
     std::cout << timer << std::endl;
-    macoro::sync_wait(macoro::suspend_always{});
-    // for (u64 i = 0; i < chl.size(); i++)
-    // {
-    //   if (i != myIdx)
-    //   {
-    //     (chl[i].flush());
-    //     chl[i].close();
-    //   }
-    // }
+    // macoro::sync_wait(macoro::suspend_always{});
+    // std::exit(0);
+    for (u64 i = 0; i < chl.size(); i++)
+    {
+      if (i != myIdx)
+      {
+        macoro::sync_wait(chl[i].flush());
+        chl[i].close();
+      }
+    }
     return;
   };
   std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads)
@@ -354,7 +364,6 @@ namespace volePSI
     }
     timer.setTimePoint("miniMPSI::reciver end");
     std::cout << timer << std::endl;
-    std::cout << "output size" << outputs.size() << std::endl;
     // for (u64 i = 0; i < outputs.size(); i++)
     // {
     //     std::cout << outputs[i] << std::endl;

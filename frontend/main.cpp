@@ -206,11 +206,36 @@ int main(int argc, char **argv)
     else
       PrintInfo();
     break;
+  case 7:
+    if (strcmp(argv[1], "-n") == 0)
+      nParties = atoi(argv[2]);
+    else
+      PrintInfo();
+    if (strcmp(argv[3], "-m") == 0)
+      setSize = 1 << atoi(argv[4]);
+    else
+      PrintInfo();
+    if (strcmp(argv[5], "-r") == 0)
+    {
+      malicious = atoi(argv[6]);
+      std::vector<std::thread> pThrds(nParties);
+      for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
+      {
+        pThrds[pIdx] =
+            std::thread([&, pIdx]()
+                        { party(nParties, setSize, pIdx, 4, malicious, 0); });
+      }
+      for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
+        pThrds[pIdx].join();
+    }
+    else
+      PrintInfo();
+    break;
   case 2:
     if (argv[1][0] == '-' && argv[1][1] == 'u')
     {
-      nParties = 10;
-      setSize = 1 << 5;
+      nParties = 60;
+      setSize = 1 << 6;
       numthreads = 4;
       malicious = 0;
       std::vector<std::thread> pThrds(nParties);

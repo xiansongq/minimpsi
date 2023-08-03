@@ -1,5 +1,6 @@
-# Vole-PSI
+# MiniMPSI-PSI
 
+MiniMPSi implements the PSI protocols in multi-party small set scenarios. Use OKVS to encode set elements, so need to quote Paxos for Vole-PSI.
 
 Vole-PSI implements the protocols described in [VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE](https://eprint.iacr.org/2021/266) and [Blazing Fast PSI from Improved OKVS and Subfield VOLE](misc/blazingFastPSI.pdf). The library implements standard [Private Set Intersection (PSI)](https://en.wikipedia.org/wiki/Private_set_intersection) along with a variant called Circuit PSI where the result is secret shared between the two parties.
 
@@ -9,14 +10,16 @@ The library is cross platform (win,linux,mac) and depends on [libOTe](https://gi
 
 The library can be cloned and built with networking support as
 ```
-git clone https://github.com/Visa-Research/volepsi.git
-cd volepsi
+git clone https://github.com/xiansongq/minimpsi.git
+cd minimpsi
 python3 build.py -DVOLE_PSI_ENABLE_BOOST=ON -DVOLE_PSI_ENABLE_RELIC=ON
 ```
+
+Because we need to use elliptic curve encryption,so must link relik library`-DVOLE_PSI_ENABLE_RELIC=ON `.
 If TCP/IP support is not required, then a minimal version of the library can be build by calling `python3 build.py`. See below and the cmake/python output for additional options.
 The user can manually call cmake as well.
 
-The output library `volePSI` and executable `frontend` will be written to `out/build/<platform>/`. The `frontend` can perform PSI based on files as input sets and communicate via sockets. See the output of `frontend` for details. There is also two example on how to perform [networking](https://github.com/Visa-Research/volepsi/blob/main/frontend/networkSocketExample.h#L7) or [manually](https://github.com/Visa-Research/volepsi/blob/main/frontend/messagePassingExample.h#L93) get & send the protocol messages.
+The output library `volepsi` and executable `frontend` will be written to `out/build/<platform>/`. The `frontend` can perform PSI based on files as input sets and communicate via sockets. See the output of `frontend` for details. There is also two example on how to perform [networking](https://github.com/Visa-Research/volepsi/blob/main/frontend/networkSocketExample.h#L7) or [manually](https://github.com/Visa-Research/volepsi/blob/main/frontend/messagePassingExample.h#L93) get & send the protocol messages.
 
 ##### Compile Options
 Options can be set as `-D NAME=VALUE`. For example, `-D VOLE_PSI_NO_SYSTEM_PATH=true`. See the output of the build for default/current value. Options include :
@@ -72,4 +75,23 @@ If the dependency is installed to the system, then cmake should automatically fi
 ```
 python3 build.py -D CMAKE_PREFIX_PATH=install/prefix/path
 ```
-
+Input paraments
+```
+-n: number of parties.
+-m: input set size ( 2^m ).
+-mm: input set size ( mm ).
+-p: the party ID (must be a continuous integer of 1-( n-1 ) ).
+-t: number of threads.
+-r: 0 is semihonest model, 1 is malicous model.
+-u: Run unit test.
+```
+For example
+```Bash
+./out/build/install/frontend/frontend -n 3 -m 5 -p 0 -t 4 -r 0
+or
+./out/build/install/frontend/frontend -n 3 -mm 64 -p 0 -t 4 -r 0
+or
+./out/build/install/frontend/frontend -n 3 -m 5 -r 0
+or
+./out/build/install/frontend/frontend -u
+```
