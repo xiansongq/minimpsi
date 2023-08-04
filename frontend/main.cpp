@@ -21,6 +21,7 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "cryptoTools/Crypto/Rijndael256.h"
 #include "miniMPSI.h"
+#include "miniMPSI_re.h"
 #include "tools.h"
 #include "volePSI/Paxos.h"
 using namespace osuCrypto;
@@ -45,6 +46,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     PrintParamInfo(nParties, setSize, SecParam, StaParam, malicious);
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
+  // std::vector<std::vector<Socket>> chls(nParties);
   std::vector<std::thread> threads(nParties);
   for (auto idx = 0; idx < threads.size(); idx++) {
     threads[idx] = std::thread([&, idx]() {
@@ -52,6 +54,9 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
         u32 port = 1200 + idx * 100 + myIdx;
         std::string ip = "localhost:" + std::to_string(port);
         // std::cout << "ip: " << ip << std::endl;
+        // chls[idx].resize(num_Threads);
+        // for (u64 i = 0; i < num_Threads; i++)
+        //   chls[idx][i] = coproto::asioConnect(ip, 0);
         chls[idx] = coproto::asioConnect(ip, 0);
       } else if (idx > myIdx) {
         u32 port =
@@ -60,6 +65,9 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
         std::string ip = "localhost:" + std::to_string(port);
         // std::cout << "ip: " << ip << std::endl;
         chls[idx] = coproto::asioConnect(ip, 1);
+        // chls[idx].resize(num_Threads);
+        // for (u64 i = 0; i < num_Threads; i++)
+        //   chls[idx][i] = coproto::asioConnect(ip, 0);
       }
     });
   }
@@ -99,13 +107,15 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
 
-    volePSI::miniMPSIReceiver receiver;
+    volePSI::miniMPSIReceiver_re receiver;
     receiver.init(128, 40, nParties, myIdx, setSize, inputs, malicious,
                   num_Threads);
     std::vector<block> ans = (receiver.receive(mPrngs, chls, num_Threads));
     // intersection success rate
-    if (ans.size() != expectedIntersection)
+    if (ans.size() != expectedIntersection) {
       std::cout << "excute PSI error" << std::endl;
+      return;
+    }
     u64 len = 0;
     for (auto i = 1; i < expectedIntersection + 1; i++) {
       if (inputs[i] == ans[i - 1])
@@ -122,7 +132,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     for (u64 i = expectedIntersection + 1; i < setSize; i++)
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
-    volePSI::miniMPSISender sender;
+    volePSI::miniMPSISender_re sender;
     sender.init(128, 40, nParties, myIdx, setSize, inputs, malicious,
                 num_Threads);
     (sender.send(mPrngs, chls, num_Threads));
@@ -202,7 +212,7 @@ int main(int argc, char **argv) {
       std::vector<std::thread> pThrds(nParties);
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
         pThrds[pIdx] = std::thread(
-            [&, pIdx]() { party(nParties, setSize, pIdx, 16, malicious, 0); });
+            [&, pIdx]() { party(nParties, setSize, pIdx, 4, malicious, 0); });
       }
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
         pThrds[pIdx].join();
@@ -211,8 +221,8 @@ int main(int argc, char **argv) {
     break;
   case 2:
     if (argv[1][0] == '-' && argv[1][1] == 'u') {
-      nParties = 60;
-      setSize = 1 << 6;
+      nParties = 3;
+      setSize = 1 << 3;
       numthreads = 4;
       malicious = 0;
       std::vector<std::thread> pThrds(nParties);

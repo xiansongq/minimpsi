@@ -6,8 +6,13 @@ tests/cmakeTests/
 tests/CMakeFiles/
 CMakeSettings.json
 frontend/CMakeFiles/
+frontend/CMakeFiles/
+
 CMakeFiles/
 volePSI/CMakeFiles
 CMakeCache.txt
+.cache
+/frontend/frontend
+/volePSI/libvolePSI.a
 .cmake/
 ~/

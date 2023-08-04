@@ -10,7 +10,10 @@
 #include "relic/relic.h"
 #include "relic/relic_core.h"
 using namespace osuCrypto;
-
+/* REccPoint to block */
+block REccPoint_to_block(const REccPoint &point);
+/* block to string */
+std::string block_to_string(const block &block);
 /* REccPoint to string */
 std::string REccPoint_to_string(const oc::REccPoint &point);
 /* string to REccPoint */

@@ -9,7 +9,9 @@ fi
 # 定义测试函数
 function run_test {
   echo "Running test: $1"
-  ./out/build/linux/frontend/frontend -n $1 -m $2 -r 1 >> time_log.txt
+  #./out/build/linux/frontend/frontend -n $1 -m $2 -r 1 >> time_log.txt
+  ./frontend/frontend -n $1 -m $2 -r 1 >> time_log.txt
+
   echo "Test finished: $2"
 }
 
