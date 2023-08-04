@@ -39,6 +39,8 @@ namespace volePSI
     std::vector<std::vector<u8>> values(setSize);
     std::vector<std::thread> thrds(nParties);
     Socket fork;
+    std::mutex mtx; // global mutex
+
     timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
 
     // if malicious mode is enabled
@@ -96,34 +98,40 @@ namespace volePSI
     // OKVS Decode for parties inputs value
     paxos.decode<u8>(inputs, val, pax, numThreads);
     // compute g_(a_i*b_i)
-    // parallel have some questions
-    /*  thrds.resize(numThreads);
-     for (auto idx = 0; idx < thrds.size(); idx++)
-     {
-       thrds[idx] = std::thread([&, idx]()
-                                {
-       REllipticCurve mCrurve;
-       u64 datalen = setSize / thrds.size();
-       u64 startlen = idx * datalen;
-       u64 endlen = (idx + 1) * datalen;
-       if (idx == thrds.size() - 1)
-         endlen = setSize;
-       for (auto i = startlen; i < endlen; i++) {
-         std::vector<u8> vec(len);
-         for (u64 j = 0; j < len; j++)
-           vec[j] = val[i][j];
-         px.emplace_back(mCrurve);
-         px[i] = vector_to_REccPoint(vec);
-         npx.emplace_back(mCrurve);
-         // compute g_(a_i*b_i)
-         npx[i] = px[i] * ai;
-         // XOR calculation results with zero shared values
-         npx[i] = REccPoint_xor_u8(npx[i], zeroValue);
-       } });
-     }
-     for (auto &thrd : thrds)
-       thrd.join();
-  */
+    thrds.clear();
+    thrds.resize(numThreads);
+    auto computation = [&](u64 idx)
+    {
+      REllipticCurve mCrurve;
+      u64 datalen = setSize / thrds.size();
+      u64 startlen = idx * datalen;
+      u64 endlen = (idx + 1) * datalen;
+      if (idx == thrds.size() - 1)
+        endlen = setSize;
+      for (auto i = startlen; i < endlen; i++)
+      {
+        std::vector<u8> vec(len);
+        for (u64 j = 0; j < len; j++)
+          vec[j] = val[i][j];
+        REccPoint px_i,npx_i;
+         px_i = vector_to_REccPoint(vec);
+        npx_i = px_i * ai;
+        npx_i = REccPoint_xor_u8(npx_i, zeroValue);
+         // add mutex to prevent concurrent modification of vectors at the same time in the same thread
+        std::lock_guard<std::mutex> lock(mtx);
+        px.emplace_back(mCrurve);
+        npx.emplace_back(mCrurve);
+        px[i] = px_i;
+        npx[i] = npx_i;
+      } };
+    for (u64 i = 0; i < thrds.size(); i++)
+    {
+      thrds[i] = std::thread([=]
+                             { computation(i); });
+    }
+    for (auto &thrd : thrds)
+      thrd.join();
+    thrds.clear();
     for (u64 i = 0; i < setSize; i++)
     {
       std::vector<u8> vec(len);

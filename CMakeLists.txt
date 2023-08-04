@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.15)
 project(miniMPSI VERSION 0.1.2)
 
 set(VOLEPSI_BUILD ON)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 # sets some variables
 include(cmake/preamble.cmake)
 
