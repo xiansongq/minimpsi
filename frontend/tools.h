@@ -1,15 +1,14 @@
 #pragma once
+// Copyright 2023 xiansongq.
 
-/* 这里包含一些 基础的工具函数 */
-
-#include "cryptoTools/Common/block.h"
-#include "cryptoTools/Crypto/RCurve.h"
 #include <iostream>
 #include <random>
-#include "volePSI/Paxos.h"
+#include "cryptoTools/Common/block.h"
+#include "cryptoTools/Crypto/RCurve.h"
 #include "relic/relic.h"
 #include "relic/relic_core.h"
-using namespace osuCrypto;
+#include "volePSI/Paxos.h"
+using namespace osuCrypto;  //NOLINT
 /* REccPoint to block */
 block REccPoint_to_block(const REccPoint &point);
 /* block to string */
@@ -36,5 +35,7 @@ oc::REccPoint REccPoint_xor(const REccPoint &a, const REccPoint &b);
 std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a);
 /* Matrix xor Vector operation */
 void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b);
+/* check threads num and setSize */
+u64 checkThreadsNum(u64 numthreads, u64 setSize);
 /* output char line */
 void PrintLine(char c);

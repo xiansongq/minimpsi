@@ -1,23 +1,24 @@
 #pragma once
+// Copyright 2023 xiansongq.
+
+#include <cassert>
+#include <iostream>
+#include <memory>
+#include <thread> //NOLINT
+#include <unordered_set>
 #include "coproto/Socket/AsioSocket.h"
 #include "cryptoTools/Common/Defines.h"
 #include "cryptoTools/Common/Matrix.h"
 #include "cryptoTools/Common/Range.h"
 #include "cryptoTools/Crypto/RCurve.h"
 #include "cryptoTools/Crypto/Rijndael256.h"
-#include "tools.h"
+#include "frontend/tools.h"
 #include "volePSI/Paxos.h"
-#include <bloom_filter.h>
-#include <cassert>
-#include <iostream>
-#include <memory>
-#include <thread>
-#include <unordered_set>
-using namespace osuCrypto;
-using namespace volePSI;
+using namespace osuCrypto; // NOLINT
+using namespace volePSI;   // NOLINT
 namespace volePSI {
 class miniMPSISender : public oc::TimerAdapter {
-public:
+ public:
   u64 secParam;
   u64 stasecParam;
   u64 nParties;
@@ -27,16 +28,17 @@ public:
   bool malicious = false;
   std::vector<block> inputs;
   u64 setSize;
+  u64 bitSize;
   REccNumber ai;
   REccPoint g_ai;
-  u8 *tempbuf;
   Timer timer;
   void send(std::vector<PRNG> &mseed, std::vector<Socket> &chl, u64 numThreads);
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,
-            std::vector<block> inputs, bool malicious, u64 numThreads);
+            u64 bitSize, std::vector<block> inputs, bool malicious,
+            u64 numThreads);
 };
 class miniMPSIReceiver : public oc ::TimerAdapter {
-public:
+ public:
   u64 secParam;
   u64 stasecParam;
   u64 nParties;
@@ -46,15 +48,15 @@ public:
   bool malicious = false;
   std::vector<block> inputs;
   u64 setSize;
+  u64 bitSize;
   REccNumber ai;
   REccPoint g_ai;
-  u8 *tempbuf;
-  volePSI::BloomFilter Filter;
   std::vector<block> outputs;
   Timer timer;
   std::vector<block> receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl,
                              u64 numThreads);
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,
-            std::vector<block> inputs, bool malicious, u64 numThreads);
+            u64 bitSize, std::vector<block> inputs, bool malicious,
+            u64 numThreads);
 };
-} // namespace volePSI
+}  // namespace volePSI

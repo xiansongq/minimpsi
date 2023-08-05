@@ -1,4 +1,6 @@
-#include "tools.h"
+// Copyright 2023 xiansongq.
+
+#include "frontend/tools.h"
 
 block REccPoint_to_block(const REccPoint &point) {
   std::array<u8, oc::REccPoint::size> buffer;
@@ -24,19 +26,15 @@ REccPoint string_to_REccPoint(const std::string &str) {
         "Invalid string size for REccPoint conversion.");
   }
   std::array<u8, oc::REccPoint::size> buffer;
-  std::copy(str.begin(), str.end(), buffer.begin());
+  std::copy(str.begin(), str.end(), buffer.begin()); //NOLINT
   oc::REccPoint point;
   try {
     point.fromBytes(buffer.data());
   } catch (const std::runtime_error &e) {
-    // std::cout << "生成随机的椭圆曲线" << std::endl;
     REllipticCurve curve;
-    // If block cannot be converted to REccPoint, create a random REccPoint
-    PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
+    PRNG prng;
     prng.SetSeed(block(str[0] - '0', str[1] - '0'));
-    // prng.SetSeed(a);
     point.randomize(prng);
-    // std::cout << "随机椭圆曲线生成成功" << std::endl;
   }
   return point;
 }
@@ -48,69 +46,14 @@ std::vector<u8> REccPoint_to_Vector(const REccPoint &point) {
 }
 
 REccPoint vector_to_REccPoint(std::vector<u8> &data) {
-  u64 len = data.size();
   REccPoint point;
-  // err_t e;
-  // ep_st *a;
-  // int elen = point.sizeBytes();
-  // RLC_TRY
-  // {
-  //   // try
-  //   // {
-  //   ep_read_bin(a, data.data(), elen);
-  //   // point.fromBytes(data.data());
-  //   //}
-  //   // catch (const std::runtime_error &e)
-  //   // {
-  //   //   std::cout << "34" << std::endl;
-  //   // }
-  // }
-  // RLC_CATCH(e)
-  // {
-  //   std::cout << "12" << std::endl;
-  // }
-
-  // 默认 data len 是足够的
-  if (len == RLC_FP_BYTES + 1) {
-    if (data[0] != 2 && data[0] != 3) {
-      // 生成随机point 返回
-      REllipticCurve curve;
-      PRNG prng;
-      std::random_device rd; // 获取真随机数设备
-      prng.SetSeed(block(rd(), rd()));
-      REccNumber num;
-      num.randomize(prng);
-      point = curve.getGenerator() * num;
-      return point;
-    }
-  }
-  if (len == 2 * RLC_FP_BYTES + 1) {
-    if (data[0] != 4) {
-      // 生成随机point 返回
-      REllipticCurve curve;
-      PRNG prng;
-      std::random_device rd; // 获取真随机数设备
-      prng.SetSeed(block(rd(), rd()));
-      REccNumber num;
-      num.randomize(prng);
-      point = curve.getGenerator() * num;
-      return point;
-    }
-  }
-
-  //   u64 len=data.size();
-
-  //  if (len != (RLC_FP_BYTES + 1) && len != (2 * RLC_FP_BYTES + 1))
-  // 	{
-  // 		std::cout<<"buffer size is error";
-  // 		return ;
-  // 	}
   try {
     point.fromBytes(data.data());
   } catch (const std::runtime_error &e) {
     REllipticCurve curve;
     PRNG prng;
-    std::random_device rd; // 获取真随机数设备
+    // 获取真随机数设备
+    std::random_device rd;
     prng.SetSeed(block(rd(), rd()));
     REccNumber num;
     num.randomize(prng);
@@ -133,17 +76,15 @@ REccPoint BitVector_to_REccPoint(const BitVector &bv) {
   if (bv.size() != pointSize * 8) {
     throw std::runtime_error("BitVector size mismatch");
   }
-
   REccPoint point;
   try {
     point.fromBytes(bv.data());
   } catch (const std::runtime_error &e) {
     REllipticCurve curve;
-    PRNG prng; // Create a PRNG (you may need to seed it with a random seed)
-    std::random_device rd; // 获取真随机数设备
+    PRNG prng;
+    std::random_device rd;
     prng.SetSeed(block(rd(), rd()));
     point.randomize(prng);
-    // std::cout << "随机椭圆曲线生成成功" << std::endl;
   }
   return point;
 }
@@ -165,7 +106,6 @@ REccPoint REccPoint_xor_u8(const REccPoint &point,
 }
 
 oc::Matrix<u8> Matrix_xor(const oc::Matrix<u8> &a, const oc::Matrix<u8> &b) {
-
   if (a.rows() == 0 || b.rows() == 0 || a.cols() == 0 || b.cols() == 0) {
     std::cout << "Matrix equal zero" << std::endl;
   } else if (a.rows() != b.rows() || a.cols() != b.cols()) {
@@ -197,24 +137,24 @@ std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a) {
   return ans;
 }
 
-void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b) {
-  // 首先将vector<u8> 中的值全部异或 只留一个 结果数据
+void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b) { //NOLINT:
   u8 ans = 1;
   for (auto a : b) {
     ans = ans ^ a;
   }
-  // 将异或结果转为BitVector
   BitVector num(ans);
-  // num 与 Matrix 每一行进行异或
   for (u64 i = 0; i < a.rows(); i++) {
-    // 将每行的每一个数字都与 ans 异或 （不知道正确不 还有待思考...）
     for (u64 j = 0; j < a.cols(); j++) {
       a[i][j] = a[i][j] ^ ans;
     }
   }
 }
+u64 checkThreadsNum(u64 numthreads, u64 setSize) {
+  return (numthreads <= setSize) ? numthreads : setSize;
+}
+
 void PrintLine(char c) {
-  int count = 50;
-  std::string line = std::string(count, c);
+  int count = 60;
+  std::string line = std::string(count, c); //NOLINT:
   std::cout << line << std::endl;
 }
