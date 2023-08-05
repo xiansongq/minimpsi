@@ -1,7 +1,7 @@
 // Copyright 2023 xiansongq.
 
-#include <stdarg.h>
 #include <iostream>
+// #include <stdarg.h>
 #include <thread> // NOLINT
 #include <vector>
 
@@ -28,7 +28,7 @@
 using namespace osuCrypto; // NOLINT
 using namespace volePSI;   // NOLINT
 // #define Debug
-void PrintParamInfo(u64 nParties, u64 setSize, u64 SecParam, u64 StaParam,
+void PrintParamInfo(u64 nParties, u64 setSize, u64 numThreads, u64 StaParam,
                     bool malicious) {
   // std::cout << oc::Color::Red
   //           << "number of parties: " << nParties << std::endl
@@ -39,7 +39,7 @@ void PrintParamInfo(u64 nParties, u64 setSize, u64 SecParam, u64 StaParam,
   //           << oc::Color::Default << std::endl;
   std::cout << "number of parties: " << nParties << std::endl
             << "set size: " << setSize << std::endl
-            << "computational security parameters: " << SecParam << std::endl
+            << "numThreads: " << numThreads << std::endl
             << "statistical security parameters: " << StaParam << std::endl
             << "malicious model?  " << (malicious == 1 ? "yes" : "no")
             << std::endl;
@@ -50,7 +50,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   // parameters
   u64 SecParam = 128, StaParam = 40, bitSize = 128;
   if (flag == 1 || (flag == 0 && myIdx == 0))
-    PrintParamInfo(nParties, setSize, SecParam, StaParam, malicious);
+    PrintParamInfo(nParties, setSize, num_Threads, StaParam, malicious);
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
   // std::vector<std::vector<Socket>> chls(nParties);
@@ -67,7 +67,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
         chls[idx] = coproto::asioConnect(ip, 0);
       } else if (idx > myIdx) {
         u32 port =
-            1200 + myIdx * 100 + idx;  // get the same port; i=2 & pIdx=1
+            1200 + myIdx * 100 + idx;   // get the same port; i=2 & pIdx=1
                                       // =>port=102 chls[i].resize(numThreads);
         std::string ip = "localhost:" + std::to_string(port);
         // std::cout << "ip: " << ip << std::endl;
@@ -146,6 +146,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     (sender.send(mPrngs, chls, num_Threads));
   }
 }
+
 void PrintInfo() {
   std::cout << oc::Color::Green
             << "###############################################################"
@@ -211,7 +212,7 @@ int main(int argc, char **argv) {
       PrintInfo();
     }
     break;
-  case 7:
+  case 9:
     if (strcmp(argv[1], "-n") == 0) {
       nParties = atoi(argv[2]);
     } else {
@@ -222,12 +223,18 @@ int main(int argc, char **argv) {
     } else {
       PrintInfo();
     }
-    if (strcmp(argv[5], "-r") == 0) {
+    if (strcmp(argv[5], "-t") == 0) {
+      numthreads = atoi(argv[6]);
+    } else {
+      PrintInfo();
+    }
+    if (strcmp(argv[7], "-r") == 0) {
       malicious = atoi(argv[6]);
       std::vector<std::thread> pThrds(nParties);
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
-        pThrds[pIdx] = std::thread(
-            [&, pIdx]() { party(nParties, setSize, pIdx, 4, malicious, 0); });
+        pThrds[pIdx] = std::thread([&, pIdx]() {
+          party(nParties, setSize, pIdx, numthreads, malicious, 0);
+        });
       }
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
         pThrds[pIdx].join();
@@ -256,5 +263,4 @@ int main(int argc, char **argv) {
     break;
   }
   return 0;
-}  // main
-
+}
