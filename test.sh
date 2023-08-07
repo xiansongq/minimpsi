@@ -10,7 +10,7 @@ fi
 function run_test {
   echo "Running test -n: $1 -m: $2"
   #./out/build/linux/frontend/frontend -n $1 -m $2 -r 1 >> time_log.txt
-  ./frontend/frontend -n $1 -m $2 -r 0 >> time_log.txt
+  ./frontend/frontend -n $1 -m $2 -t 4 -r 0 >> time_log.txt
 
   echo "Finished test -n: $1 -m: $2"
 }

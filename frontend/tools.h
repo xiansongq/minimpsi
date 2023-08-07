@@ -39,3 +39,5 @@ void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b);
 u64 checkThreadsNum(u64 numthreads, u64 setSize);
 /* output char line */
 void PrintLine(char c);
+/* unsignend char * to block */
+block unsignend_char_to_block(const unsigned char *str);

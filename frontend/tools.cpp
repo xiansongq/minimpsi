@@ -158,3 +158,8 @@ void PrintLine(char c) {
   std::string line = std::string(count, c); //NOLINT:
   std::cout << line << std::endl;
 }
+block unsignend_char_to_block(const unsigned char *str){
+    block result;
+    std::memcpy(result.data(), str, sizeof(block));
+    return result;
+}

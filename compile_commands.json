@@ -61,6 +61,11 @@
 },
 {
   "directory": "/root/project/volepsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/miniMPSI_Ris.cpp.o -c /root/project/volepsi/frontend/miniMPSI_Ris.cpp",
+  "file": "/root/project/volepsi/frontend/miniMPSI_Ris.cpp"
+},
+{
+  "directory": "/root/project/volepsi/frontend",
   "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/murmurhash3.cpp.o -c /root/project/volepsi/frontend/murmurhash3.cpp",
   "file": "/root/project/volepsi/frontend/murmurhash3.cpp"
 },

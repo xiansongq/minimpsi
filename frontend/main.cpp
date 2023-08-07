@@ -23,6 +23,7 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "cryptoTools/Crypto/Rijndael256.h"
 #include "frontend/miniMPSI.h"
+#include "frontend/miniMPSI_Ris.h"
 #include "frontend/tools.h"
 #include "volePSI/Paxos.h"
 using namespace osuCrypto; // NOLINT
@@ -114,7 +115,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
 
-    volePSI::miniMPSIReceiver receiver;
+    volePSI::miniMPSIReceiver_Ris receiver;
     receiver.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
                   num_Threads);
     std::vector<block> ans = (receiver.receive(mPrngs, chls, num_Threads));
@@ -132,6 +133,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     std::cout << "intersection success rate " << std::setprecision(2)
               << static_cast<double>(len) / expectedIntersection * 100 << "%"
               << std::endl;
+    std::cout << std::endl;
   } else {
     std::vector<block> inputs(setSize);
     for (u64 i = 1; i < expectedIntersection + 1; i++)
@@ -140,7 +142,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     for (u64 i = expectedIntersection + 1; i < setSize; i++)
       inputs[i] = prng1.get<block>();
     inputs[0] = prng1.get<block>();
-    volePSI::miniMPSISender sender;
+    volePSI::miniMPSISender_Ris sender;
     sender.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
                 num_Threads);
     (sender.send(mPrngs, chls, num_Threads));

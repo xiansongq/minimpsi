@@ -202,6 +202,30 @@ miniMPSI.cpp.s:
 	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI.cpp.s
 .PHONY : miniMPSI.cpp.s
 
+miniMPSI_Ris.o: miniMPSI_Ris.cpp.o
+.PHONY : miniMPSI_Ris.o
+
+# target to build an object file
+miniMPSI_Ris.cpp.o:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI_Ris.cpp.o
+.PHONY : miniMPSI_Ris.cpp.o
+
+miniMPSI_Ris.i: miniMPSI_Ris.cpp.i
+.PHONY : miniMPSI_Ris.i
+
+# target to preprocess a source file
+miniMPSI_Ris.cpp.i:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI_Ris.cpp.i
+.PHONY : miniMPSI_Ris.cpp.i
+
+miniMPSI_Ris.s: miniMPSI_Ris.cpp.s
+.PHONY : miniMPSI_Ris.s
+
+# target to generate assembly for a file
+miniMPSI_Ris.cpp.s:
+	cd /root/project/volepsi && $(MAKE) $(MAKESILENT) -f frontend/CMakeFiles/frontend.dir/build.make frontend/CMakeFiles/frontend.dir/miniMPSI_Ris.cpp.s
+.PHONY : miniMPSI_Ris.cpp.s
+
 murmurhash3.o: murmurhash3.cpp.o
 .PHONY : murmurhash3.o
 
@@ -292,6 +316,9 @@ help:
 	@echo "... miniMPSI.o"
 	@echo "... miniMPSI.i"
 	@echo "... miniMPSI.s"
+	@echo "... miniMPSI_Ris.o"
+	@echo "... miniMPSI_Ris.i"
+	@echo "... miniMPSI_Ris.s"
 	@echo "... murmurhash3.o"
 	@echo "... murmurhash3.i"
 	@echo "... murmurhash3.s"
