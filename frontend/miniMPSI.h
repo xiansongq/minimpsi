@@ -25,6 +25,7 @@ class miniMPSISender : public oc::TimerAdapter {
   u64 numThreads;
   u64 myIdx;
   volePSI::Baxos paxos;
+  //Paxos<u64> paxos;
   bool malicious = false;
   std::vector<block> inputs;
   u64 setSize;
@@ -45,6 +46,7 @@ class miniMPSIReceiver : public oc ::TimerAdapter {
   u64 numThreads;
   u64 myIdx;
   volePSI::Baxos paxos;
+  //Paxos<u64> paxos;
   bool malicious = false;
   std::vector<block> inputs;
   u64 setSize;

@@ -1,11 +1,9 @@
 // Copyright 2023 xiansongq.
 
-#include <boost/asio/execution_context.hpp>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio.hpp>
-#include <boost/thread.hpp>
+#include <macoro/when_all.h>
 #include <cstddef>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include "frontend/miniMPSI.h"
 #include "coproto/Common/Defines.h"
@@ -14,6 +12,10 @@
 #include "frontend/tools.h"
 #include "macoro/sync_wait.h"
 #include "macoro/thread_pool.h"
+#include <boost/asio.hpp>
+#include <boost/asio/execution_context.hpp>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/thread.hpp>
 // #define Debug
 namespace volePSI {
 
@@ -67,7 +69,8 @@ void miniMPSISender::send(std::vector<PRNG> &mseed, std::vector<Socket> &chl,
     for (auto &thread : thrds)
       thread.join();
   }
-
+  paxos.init(setSize, 128, 3, stasecParam, PaxosParam::GF128, block(0, 0));
+  // paxos.setInput(inputs);
   // create zeroshare values
   zeroValue[0] = toBlock(0, 0);
 #pragma omp parallel for num_threads(numThreads)
@@ -81,17 +84,21 @@ void miniMPSISender::send(std::vector<PRNG> &mseed, std::vector<Socket> &chl,
   ai.randomize(prng);
   g_ai = mG * ai;
   std::vector<u8> points = REccPoint_to_Vector(g_ai);
+  timer.setTimePoint("miniMPSI::sender online start");
   macoro::sync_wait(chl[0].send(coproto::copy(points)));
 
   // receive parameters of OKVS result vector
-  paxos.init(setSize, 128, 3, stasecParam, PaxosParam::Binary, block(0, 0));
   size_t size = 0;
   macoro::sync_wait(chl[0].recv(size));
   std::vector<block> pax(size), deval(setSize);
   //  receive vector of OKVS result
   macoro::sync_wait(chl[0].recv((pax)));
   // OKVS Decode for parties inputs value
+  timer.setTimePoint("miniMPSI::sender "+std::to_string(myIdx)+" decode start");
+
   paxos.decode<block>(inputs, deval, pax, numThreads);
+  timer.setTimePoint("miniMPSI::sender "+std::to_string(myIdx)+" decode end");
+
   std::vector<block> allpx(setSize);
 #ifdef Debug
   PrintLine('-');
@@ -125,7 +132,10 @@ void miniMPSISender::send(std::vector<PRNG> &mseed, std::vector<Socket> &chl,
 
   // OKVS encode for (inputs and g^(a_i*b_i) \xor (zeroshare values))
   std::vector<block> pax2(paxos.size());
+  timer.setTimePoint("miniMPSI::sender "+std::to_string(myIdx)+" encode start");
   paxos.solve<block>(inputs, allpx, pax2, &prng, numThreads);
+  timer.setTimePoint("miniMPSI::sender "+std::to_string(myIdx)+" encode end");
+
   macoro::sync_wait(chl[0].send(paxos.size()));
   macoro::sync_wait(chl[0].send(coproto::copy(pax2)));
 #ifdef Debug
@@ -158,8 +168,8 @@ std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed,
   std::vector<REccNumber> nSeeds(nParties);
   std::vector<REccPoint> mypoint(nParties);
   std::vector<std::thread> thrds(nParties);
-  std::vector<block> reinputs(setSize);  // save original input
-  // std::mutex mtx;                          // global mutex
+  std::vector<block> reinputs(setSize);   // save original input
+  std::mutex mtx;                         // global mutex
   reinputs = inputs;
   timer.setTimePoint("miniMPSI::reciver start");
   // if malicious mode is enabled
@@ -185,6 +195,9 @@ std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed,
     for (auto &thread : thrds)
       thread.join();
   }
+  paxos.init(setSize, 128, 3, stasecParam, PaxosParam::GF128, block(0, 0));
+  // paxos.setInput(inputs);
+
   // create zeroshare values
   zeroValue[0] = toBlock(0, 0);
   // #pragma omp parallel for num_threads(numThreads)
@@ -197,44 +210,7 @@ std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed,
   prng.SetSeed(toBlock(myIdx, myIdx));
   mG = mCrurve.getGenerator();
 
-  for (u64 i = 1; i < nParties; i++) {
-    tempPoint = mCrurve;
-    std::vector<u8> points(g_ai.sizeBytes());
-    macoro::sync_wait(chl[i].recv((points)));
-    tempPoint.fromBytes(points.data());
-    akrandom.emplace_back(mCrurve);
-    akrandom[i] = tempPoint;
-  }
   std::vector<block> val(setSize);
-  /*   //have some questions about this thread
-  thrds.resize(setSize);
-    auto createPoint = [&](u64 idx) {
-      u64 datalen = setSize / thrds.size();
-      u64 startlen = idx * datalen;
-      u64 endlen = (idx + 1) * datalen;
-      if (idx == thrds.size() - 1)
-        endlen = setSize;
-      for (u64 i = startlen; i < endlen; i++) {
-        REllipticCurve mCrurve;
-        REccPoint point;
-        REccNumber num;
-        num.randomize(prng);
-        point = mG * num;
-        block a = REccPoint_to_block(point);
-        std::lock_guard<std::mutex> lock(mtx);
-        mypoint.emplace_back(mCrurve);
-        nSeeds.emplace_back(mCrurve);
-        nSeeds[i] = num;
-        mypoint[i] = point;
-        val[i] = a;
-      }
-    };
-    for (u64 i = 0; i < thrds.size(); i++) {
-      thrds[i] = std::thread([=] { createPoint(i); });
-    }
-    for (u64 i = 0; i < thrds.size(); i++)
-      thrds[i].join(); */
-
   // Create collection setSize elliptical curve points
   for (u64 i = 0; i < setSize; i++) {
     nSeeds.emplace_back(mCrurve);
@@ -242,6 +218,15 @@ std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed,
     mypoint.emplace_back(mCrurve);
     mypoint[i] = mG * nSeeds[i];
     val[i] = REccPoint_to_block(mypoint[i]);
+  }
+  timer.setTimePoint("miniMPSI::reciver online start");
+  for (u64 i = 1; i < nParties; i++) {
+    tempPoint = mCrurve;
+    std::vector<u8> points(g_ai.sizeBytes());
+    macoro::sync_wait(chl[i].recv((points)));
+    tempPoint.fromBytes(points.data());
+    akrandom.emplace_back(mCrurve);
+    akrandom[i] = tempPoint;
   }
 
 #ifdef Debug
@@ -254,7 +239,7 @@ std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed,
 #endif
 
   //  OKVS encode for (inputs, g_(a_i))
-  paxos.init(setSize, 128, 3, stasecParam, PaxosParam::Binary, block(0, 0));
+  // paxos.init(setSize, 128, 3, stasecParam, PaxosParam::GF128, block(0, 0));
   std::vector<block> pax(paxos.size());
   paxos.solve<block>(inputs, val, pax, &prng, numThreads);
 // send parameters of OKVS encode results
@@ -293,68 +278,68 @@ std::vector<block> miniMPSIReceiver::receive(std::vector<PRNG> &mseed,
   }
   std::unordered_multiset<block> result(setSize);
 
-  thrds.resize(numThreads);
   timer.setTimePoint("miniMPSI::receiver calculation all kyes start");
-  // auto computeAllKey = [&](u64 idx) {
-  //   REllipticCurve mCrurve;
-  //   u64 datalen = setSize / thrds.size();
-  //   u64 startlen = idx * datalen;
-  //   u64 endlen = (idx + 1) * datalen;
-  //   if (idx == thrds.size() - 1)
-  //     endlen = setSize;
-  //   for (u64 i = startlen; i < endlen; i++) {
-  //     for (u64 j = 0; j < nParties; j++)
-  //       allpx[i] = allpx[i] ^ zeroValue[j];
-  //     std::vector<block> userkey(nParties);
-  //     for (u64 j = 1; j < nParties; j++) {
-  //       userkey[j] = REccPoint_to_block(akrandom[j]) +
-  //                    REccPoint_to_block(mG * nSeeds[i]);
-  //     }
-  //     if (nParties > 2) {
-  //       for (u64 k = 2; k < nParties; k++) {
-  //         userkey[1] = userkey[1] ^ userkey[k];
-  //       }
-  //     }
-  //     result.insert((userkey[1]));
-  //   }
-  // };
-  // thrds.resize(numThreads);
-  // for (u64 i = 0; i < thrds.size(); i++) {
-  //   thrds[i] = std::thread([=] { computeAllKey(i); });
-  // }
-  // for (auto &thrd : thrds)
-  //   thrd.join();
-
-  boost::asio::thread_pool pool(4);
-  for (u64 h = 0; h < numThreads; h++) {
-    boost::asio::post(
-        pool,
-        [&,h]() {
-          REllipticCurve mCrurve;
-          u64 datalen = setSize / thrds.size();
-          u64 startlen = h * datalen;
-          u64 endlen = (h + 1) * datalen;
-          if (h == thrds.size() - 1)
-            endlen = setSize;
-          for (u64 i = startlen; i < endlen; i++) {
-            for (u64 j = 0; j < nParties; j++)
-              allpx[i] = allpx[i] ^ zeroValue[j];
-            std::vector<block> userkey(nParties);
-            for (u64 j = 1; j < nParties; j++) {
-              userkey[j] = REccPoint_to_block(akrandom[j]) +
-                           REccPoint_to_block(mG * nSeeds[i]);
-            }
-            if (nParties > 2) {
-              for (u64 k = 2; k < nParties; k++) {
-                userkey[1] = userkey[1] ^ userkey[k];
-              }
-            }
-            result.insert((userkey[1]));
-          }
-        },
-        h);
+  thrds.resize(numThreads);
+  auto computeAllKey = [&](u64 idx) {
+    REllipticCurve mCrurve;
+    u64 datalen = setSize / thrds.size();
+    u64 startlen = idx * datalen;
+    u64 endlen = (idx + 1) * datalen;
+    if (idx == thrds.size() - 1)
+      endlen = setSize;
+    for (u64 i = startlen; i < endlen; i++) {
+      for (u64 j = 0; j < nParties; j++)
+        allpx[i] = allpx[i] ^ zeroValue[j];
+      std::vector<block> userkey(nParties);
+      for (u64 j = 1; j < nParties; j++) {
+        userkey[j] = REccPoint_to_block(akrandom[j]) +
+                     REccPoint_to_block(mG * nSeeds[i]);
+      }
+      if (nParties > 2) {
+        for (u64 k = 2; k < nParties; k++) {
+          userkey[1] = userkey[1] ^ userkey[k];
+        }
+      }
+      result.insert((userkey[1]));
+    }
+  };
+  thrds.resize(numThreads);
+  for (u64 i = 0; i < thrds.size(); i++) {
+    thrds[i] = std::thread([=] { computeAllKey(i); });
   }
-  pool.wait();
+  for (auto &thrd : thrds)
+    thrd.join();
+
+  // boost::asio::thread_pool pool(4);
+  // for (u64 h = 0; h < numThreads; h++) {
+  //   boost::asio::post(
+  //       pool,
+  //       [&, h]() {
+  //         REllipticCurve mCrurve;
+  //         u64 datalen = setSize / thrds.size();
+  //         u64 startlen = h * datalen;
+  //         u64 endlen = (h + 1) * datalen;
+  //         if (h == thrds.size() - 1)
+  //           endlen = setSize;
+  //         for (u64 i = startlen; i < endlen; i++) {
+  //           for (u64 j = 0; j < nParties; j++)
+  //             allpx[i] = allpx[i] ^ zeroValue[j];
+  //           std::vector<block> userkey(nParties);
+  //           for (u64 j = 1; j < nParties; j++) {
+  //             userkey[j] = REccPoint_to_block(akrandom[j]) +
+  //                          REccPoint_to_block(mG * nSeeds[i]);
+  //           }
+  //           if (nParties > 2) {
+  //             for (u64 k = 2; k < nParties; k++) {
+  //               userkey[1] = userkey[1] ^ userkey[k];
+  //             }
+  //           }
+  //           result.insert((userkey[1]));
+  //         }
+  //       },
+  //       h);
+  // }
+  // pool.wait();
   timer.setTimePoint("miniMPSI::receiver calculation all kyes end");
   std::cout << "numThreads： " << numThreads << std::endl;
   for (u64 i = 0; i < setSize; i++) {
@@ -380,4 +365,4 @@ void miniMPSIReceiver::init(u64 secParam, u64 stasecParam, u64 nParties,
   this->malicious = malicious;
   this->numThreads = numThreads;
 }
-}  // namespace volePSI
+}   // namespace volePSI

@@ -229,7 +229,7 @@ int main(int argc, char **argv) {
       PrintInfo();
     }
     if (strcmp(argv[7], "-r") == 0) {
-      malicious = atoi(argv[6]);
+      malicious = atoi(argv[8]);
       std::vector<std::thread> pThrds(nParties);
       for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
         pThrds[pIdx] = std::thread([&, pIdx]() {
