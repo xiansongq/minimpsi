@@ -13,6 +13,7 @@
 #include <memory>
 #include <thread> //NOLINT
 #include <unordered_set>
+#include "frontend/PsiDefines.h"
 
 #include "frontend/tools.h"
 #include "volePSI/Paxos.h"
@@ -55,6 +56,9 @@ public:
   u64 setSize;
   u64 bitSize;
   std::vector<block> outputs;
+	ropo_fe25519 mfe25519_one;
+		
+
   Timer timer;
   std::vector<block> receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl,
                              u64 numThreads);

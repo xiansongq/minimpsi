@@ -1,13 +1,13 @@
 .vs/
 .vscode/
 out/
-thirdparty/
+# thirdparty/
 tests/cmakeTests/
 tests/CMakeFiles/
 CMakeSettings.json
 frontend/CMakeFiles/
 frontend/CMakeFiles/
-
+.clangd/
 CMakeFiles/
 volePSI/CMakeFiles
 CMakeCache.txt

@@ -163,3 +163,34 @@ block unsignend_char_to_block(const unsigned char *str){
     std::memcpy(result.data(), str, sizeof(block));
     return result;
 }
+std::vector<block> Ristretto225_to_block(const unsigned char *point){
+  std::vector<block> ans;
+  ans.push_back(toBlock(point));
+  ans.push_back(toBlock(point+sizeof(block)));
+  std::cout<<ans[0]<<" "<<ans[1]<<std::endl;
+  return ans;
+}
+unsigned char * Block_to_Ristretto225(const block &a,const block &b){
+  unsigned char * point =new unsigned char[crypto_core_ristretto255_BYTES];
+  memcpy(point, &a, sizeof(block));
+  memcpy(point + sizeof(block), &b, sizeof(block));
+  return point;
+}
+std::string Ristretto225_to_string(const block &a, const block &b) {
+    std::string result;
+    result.reserve(2 * sizeof(block));
+
+    const unsigned char *aPtr = reinterpret_cast<const unsigned char *>(&a);
+    const unsigned char *bPtr = reinterpret_cast<const unsigned char *>(&b);
+
+    for (size_t i = 0; i < sizeof(block); ++i) {
+        result += aPtr[i];
+    }
+    for (size_t i = 0; i < sizeof(block); ++i) {
+        result += bPtr[i];
+    }
+
+    return result;
+}
+
+

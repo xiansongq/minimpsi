@@ -1,82 +1,82 @@
 [
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsOprf.cpp.o -c /root/project/volepsi/volePSI/RsOprf.cpp",
-  "file": "/root/project/volepsi/volePSI/RsOprf.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsOprf.cpp.o -c /root/project/minimpsi/volePSI/RsOprf.cpp",
+  "file": "/root/project/minimpsi/volePSI/RsOprf.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsPsi.cpp.o -c /root/project/volepsi/volePSI/RsPsi.cpp",
-  "file": "/root/project/volepsi/volePSI/RsPsi.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsPsi.cpp.o -c /root/project/minimpsi/volePSI/RsPsi.cpp",
+  "file": "/root/project/minimpsi/volePSI/RsPsi.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/SimpleIndex.cpp.o -c /root/project/volepsi/volePSI/SimpleIndex.cpp",
-  "file": "/root/project/volepsi/volePSI/SimpleIndex.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/SimpleIndex.cpp.o -c /root/project/minimpsi/volePSI/SimpleIndex.cpp",
+  "file": "/root/project/minimpsi/volePSI/SimpleIndex.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/fileBased.cpp.o -c /root/project/volepsi/volePSI/fileBased.cpp",
-  "file": "/root/project/volepsi/volePSI/fileBased.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/fileBased.cpp.o -c /root/project/minimpsi/volePSI/fileBased.cpp",
+  "file": "/root/project/minimpsi/volePSI/fileBased.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/GMW/Circuit.cpp.o -c /root/project/volepsi/volePSI/GMW/Circuit.cpp",
-  "file": "/root/project/volepsi/volePSI/GMW/Circuit.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/GMW/Circuit.cpp.o -c /root/project/minimpsi/volePSI/GMW/Circuit.cpp",
+  "file": "/root/project/minimpsi/volePSI/GMW/Circuit.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/GMW/Gmw.cpp.o -c /root/project/volepsi/volePSI/GMW/Gmw.cpp",
-  "file": "/root/project/volepsi/volePSI/GMW/Gmw.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/GMW/Gmw.cpp.o -c /root/project/minimpsi/volePSI/GMW/Gmw.cpp",
+  "file": "/root/project/minimpsi/volePSI/GMW/Gmw.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/GMW/SilentTripleGen.cpp.o -c /root/project/volepsi/volePSI/GMW/SilentTripleGen.cpp",
-  "file": "/root/project/volepsi/volePSI/GMW/SilentTripleGen.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/GMW/SilentTripleGen.cpp.o -c /root/project/minimpsi/volePSI/GMW/SilentTripleGen.cpp",
+  "file": "/root/project/minimpsi/volePSI/GMW/SilentTripleGen.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsCpsi.cpp.o -c /root/project/volepsi/volePSI/RsCpsi.cpp",
-  "file": "/root/project/volepsi/volePSI/RsCpsi.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsCpsi.cpp.o -c /root/project/minimpsi/volePSI/RsCpsi.cpp",
+  "file": "/root/project/minimpsi/volePSI/RsCpsi.cpp"
 },
 {
-  "directory": "/root/project/volepsi/volePSI",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsOpprf.cpp.o -c /root/project/volepsi/volePSI/RsOpprf.cpp",
-  "file": "/root/project/volepsi/volePSI/RsOpprf.cpp"
+  "directory": "/root/project/minimpsi/volePSI",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -o CMakeFiles/volePSI.dir/RsOpprf.cpp.o -c /root/project/minimpsi/volePSI/RsOpprf.cpp",
+  "file": "/root/project/minimpsi/volePSI/RsOpprf.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/bloom_filter.cpp.o -c /root/project/volepsi/frontend/bloom_filter.cpp",
-  "file": "/root/project/volepsi/frontend/bloom_filter.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/bloom_filter.cpp.o -c /root/project/minimpsi/frontend/bloom_filter.cpp",
+  "file": "/root/project/minimpsi/frontend/bloom_filter.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/main.cpp.o -c /root/project/volepsi/frontend/main.cpp",
-  "file": "/root/project/volepsi/frontend/main.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/main.cpp.o -c /root/project/minimpsi/frontend/main.cpp",
+  "file": "/root/project/minimpsi/frontend/main.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/miniMPSI.cpp.o -c /root/project/volepsi/frontend/miniMPSI.cpp",
-  "file": "/root/project/volepsi/frontend/miniMPSI.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/miniMPSI.cpp.o -c /root/project/minimpsi/frontend/miniMPSI.cpp",
+  "file": "/root/project/minimpsi/frontend/miniMPSI.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/miniMPSI_Ris.cpp.o -c /root/project/volepsi/frontend/miniMPSI_Ris.cpp",
-  "file": "/root/project/volepsi/frontend/miniMPSI_Ris.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/miniMPSI_Ris.cpp.o -c /root/project/minimpsi/frontend/miniMPSI_Ris.cpp",
+  "file": "/root/project/minimpsi/frontend/miniMPSI_Ris.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/murmurhash3.cpp.o -c /root/project/volepsi/frontend/murmurhash3.cpp",
-  "file": "/root/project/volepsi/frontend/murmurhash3.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/murmurhash3.cpp.o -c /root/project/minimpsi/frontend/murmurhash3.cpp",
+  "file": "/root/project/minimpsi/frontend/murmurhash3.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/perf.cpp.o -c /root/project/volepsi/frontend/perf.cpp",
-  "file": "/root/project/volepsi/frontend/perf.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/perf.cpp.o -c /root/project/minimpsi/frontend/perf.cpp",
+  "file": "/root/project/minimpsi/frontend/perf.cpp"
 },
 {
-  "directory": "/root/project/volepsi/frontend",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/volepsi/frontend -I/root/project/volepsi/volePSI/.. -isystem /root/project/volepsi/out/install/linux/include -isystem /include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/tools.cpp.o -c /root/project/volepsi/frontend/tools.cpp",
-  "file": "/root/project/volepsi/frontend/tools.cpp"
+  "directory": "/root/project/minimpsi/frontend",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -I/root/project/minimpsi/frontend -I/root/project/minimpsi/volePSI/.. -isystem /root/project/minimpsi/out/install/linux/include  -Wall -Wfatal-errors -march=native -Wall -Wfatal-errors -march=native -O3  -DNDEBUG -std=c++17 -mavx -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -fopenmp -o CMakeFiles/frontend.dir/tools.cpp.o -c /root/project/minimpsi/frontend/tools.cpp",
+  "file": "/root/project/minimpsi/frontend/tools.cpp"
 }
 ]

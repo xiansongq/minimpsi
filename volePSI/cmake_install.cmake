@@ -1,4 +1,4 @@
-# Install script for directory: /root/project/volepsi/volePSI
+# Install script for directory: /root/project/minimpsi/volePSI
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

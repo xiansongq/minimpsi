@@ -8,6 +8,7 @@
 #include "relic/relic.h"
 #include "relic/relic_core.h"
 #include "volePSI/Paxos.h"
+#include "sodium.h"
 using namespace osuCrypto;  //NOLINT
 /* REccPoint to block */
 block REccPoint_to_block(const REccPoint &point);
@@ -41,3 +42,8 @@ u64 checkThreadsNum(u64 numthreads, u64 setSize);
 void PrintLine(char c);
 /* unsignend char * to block */
 block unsignend_char_to_block(const unsigned char *str);
+/* ristretto255 char 256 to 2 block */
+std::vector<block> Ristretto225_to_block(const unsigned char *point);
+/* 2 block to ristretto225 */
+unsigned char * Block_to_Ristretto225(const block &a,const block &b);
+std::string Ristretto225_to_string(const block &a,const block &b);

@@ -1,4 +1,4 @@
-# Install script for directory: /root/project/volepsi/frontend
+# Install script for directory: /root/project/minimpsi/frontend
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
