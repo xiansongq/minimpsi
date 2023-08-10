@@ -15,4 +15,6 @@ CMakeCache.txt
 /frontend/frontend
 /volePSI/libvolePSI.a
 .cmake/
+.clang-fromat
+.clang-tidy
 ~/

@@ -22,9 +22,12 @@
 #include "cryptoTools/Common/Defines.h"
 #include "cryptoTools/Crypto/RCurve.h"
 #include "cryptoTools/Crypto/Rijndael256.h"
-#include "frontend/miniMPSI.h"
-#include "frontend/miniMPSI_Ris.h"
-#include "frontend/tools.h"
+// #include "frontend/miniMPSI.h"
+// #include "frontend/miniMPSI_Ris.h"
+#include "miniMPSI/miniMPSIReceiver_Ris.h"
+#include "miniMPSI/miniMPSISender_Ris.h"
+
+#include "miniMPSI/tools.h"
 #include "volePSI/Paxos.h"
 using namespace osuCrypto; // NOLINT
 using namespace volePSI;   // NOLINT

@@ -16,6 +16,9 @@ include(cmake/findDependancies.cmake)
 # build volePSI
 add_subdirectory(volePSI)
 
+#build miniMPSI
+add_subdirectory(miniMPSI)
+
 # build the tests.
 #add_subdirectory(tests)
 

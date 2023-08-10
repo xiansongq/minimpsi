@@ -1,10 +1,12 @@
 
-file(GLOB_RECURSE SRCS *.cpp)
+file(GLOB_RECURSE SRCS *.cpp )
+# 查找 miniMPSI 目录下的所有源文件
+file(GLOB MINIMPSI_SRCS "miniMPSI/*.cpp")
 include_directories(${CMAKE_SOURCE_DIR}/frontend/)
-add_executable(frontend  ${SRCS})
+add_executable(frontend  ${SRCS} )
 FIND_PACKAGE(OpenMP REQUIRED)
 ## OpenMP::OpenMP_CXX
-target_link_libraries(frontend volePSI OpenMP::OpenMP_CXX)
+target_link_libraries(frontend volePSI OpenMP::OpenMP_CXX miniMPSI)
 
 
 if(VOLE_PSI_NO_LTO)
