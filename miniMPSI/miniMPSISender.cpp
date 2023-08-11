@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <iostream>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
 #include "coproto/Common/Defines.h"
@@ -149,7 +150,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
       g_a = Block_to_Ristretto225(deval[i][0], deval[i][1]);
       auto g_f = decKey.decBlock((Block256(g_a)));
       g_a = g_f.data();
-      crypto_scalarmult_ristretto255(g_ab, mK, g_a);
+      crypto_scalarmult_ristretto255(g_ab, mK, g_a);  // NOLINT
       allpx[i][0] = toBlock(g_ab);
       allpx[i][1] = toBlock(g_ab + sizeof(block));
       for (u64 j = 0; j < nParties; j++) {

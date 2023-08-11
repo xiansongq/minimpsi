@@ -2,12 +2,11 @@
 
 #include <iostream>
 // #include <stdarg.h>
-#include <thread> // NOLINT
+#include <thread>  // NOLINT
 #include <vector>
 
-#include "frontend/perf.h"
-#include "tests/UnitTests.h"
-
+#include "coproto/Socket/AsioSocket.h"
+#include "cryptoTools/Common/Defines.h"
 #include "cryptoTools/Common/Log.h"
 #include "cryptoTools/Common/Matrix.h"
 #include "cryptoTools/Network/Channel.h"
@@ -15,24 +14,20 @@
 #include "cryptoTools/Network/IOService.h"
 #include "frontend/messagePassingExample.h"
 #include "frontend/networkSocketExample.h"
+#include "frontend/perf.h"
 #include "tests/Paxos_Tests.h"
+#include "tests/UnitTests.h"
 #include "volePSI/fileBased.h"
-
-#include "coproto/Socket/AsioSocket.h"
-#include "cryptoTools/Common/Defines.h"
-#include "cryptoTools/Crypto/RCurve.h"
-#include "cryptoTools/Crypto/Rijndael256.h"
 // #include "frontend/miniMPSI.h"
 // #include "frontend/miniMPSI_Ris.h"
 #include "miniMPSI/miniMPSIReceiver_Ris.h"
 #include "miniMPSI/miniMPSISender_Ris.h"
-
 #include "miniMPSI/tools.h"
 #include "volePSI/Paxos.h"
-using namespace osuCrypto; // NOLINT
-using namespace volePSI;   // NOLINT
+using namespace osuCrypto;  // NOLINT
+using namespace volePSI;    // NOLINT
 // #define Debug
-void PrintParamInfo(u64 nParties, u64 setSize, u64 numThreads, u64 StaParam,
+void printParamInfo(u64 nParties, u64 setSize, u64 numThreads, u64 StaParam,
                     bool malicious) {
   // std::cout << oc::Color::Red
   //           << "number of parties: " << nParties << std::endl
@@ -52,9 +47,12 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
            bool malicious, u64 flag) {
   // Initialize calculation of security parameters and statistical security
   // parameters
-  u64 SecParam = 128, StaParam = 40, bitSize = 128;
-  if (flag == 1 || (flag == 0 && myIdx == 0))
-    PrintParamInfo(nParties, setSize, num_Threads, StaParam, malicious);
+  u64 SecParam = 128;
+  u64 StaParam = 40;
+  u64 bitSize = 128;
+  if (flag == 1 || (flag == 0 && myIdx == 0)) {
+    printParamInfo(nParties, setSize, num_Threads, StaParam, malicious);
+  }
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
   // std::vector<std::vector<Socket>> chls(nParties);
@@ -71,8 +69,8 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
         chls[idx] = coproto::asioConnect(ip, 0);
       } else if (idx > myIdx) {
         u32 port =
-            1200 + myIdx * 100 + idx;   // get the same port; i=2 & pIdx=1
-                                      // =>port=102 chls[i].resize(numThreads);
+            1200 + myIdx * 100 + idx;  // get the same port; i=2 & pIdx=1
+                                       // =>port=102 chls[i].resize(numThreads);
         std::string ip = "localhost:" + std::to_string(port);
         // std::cout << "ip: " << ip << std::endl;
         chls[idx] = coproto::asioConnect(ip, 1);
@@ -82,8 +80,9 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       }
     });
   }
-  for (auto &thrd : threads)
+  for (auto &thrd : threads) {
     thrd.join();
+  }
 
   std::vector<PRNG> mPrngs(nParties);
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
@@ -129,8 +128,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     }
     u64 len = 0;
     for (auto i = 1; i < expectedIntersection + 1; i++) {
-      if (inputs[i] == ans[i - 1])
-        len++;
+      if (inputs[i] == ans[i - 1]) len++;
     }
     std::cout << "instersection size is " << ans.size() << std::endl;
     std::cout << "intersection success rate " << std::setprecision(2)
@@ -152,7 +150,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   }
 }
 
-void PrintInfo() {
+void printInfo() {
   std::cout << oc::Color::Green
             << "###############################################################"
                "######\n"
@@ -184,88 +182,85 @@ int main(int argc, char **argv) {
   u64 nParties, setSize, pIdx, numthreads;
   bool malicious = false;
   switch (argc) {
-  case 11:
-    if (argv[1][0] == '-' && argv[1][1] == 'n') {
-      nParties = atoi(argv[2]);
-    } else {
-      PrintInfo();
-    }
-    if (strcmp(argv[3], "-m") == 0) {
-      setSize = 1 << atoi(argv[4]);
-    } else if (strcmp(argv[3], "-mm") == 0) {
-      setSize = atoi(argv[4]);
-    } else {
-      PrintInfo();
-    }
-    if (argv[5][0] == '-' && argv[5][1] == 'p') {
-      pIdx = atoi(argv[6]);
-    } else {
-      PrintInfo();
-    }
-    if (argv[7][0] == '-' && argv[7][1] == 't') {
-      numthreads = atoi(argv[8]);
-    } else {
-      PrintInfo();
-    }
-    if (strcmp(argv[9], "-r") == 0) {
-      if (strcmp(argv[10], "1") == 0)
-        malicious = true;
-      else
-        malicious = false;
-      party(nParties, setSize, pIdx, numthreads, malicious, 1);
-    } else {
-      PrintInfo();
-    }
-    break;
-  case 9:
-    if (strcmp(argv[1], "-n") == 0) {
-      nParties = atoi(argv[2]);
-    } else {
-      PrintInfo();
-    }
-    if (strcmp(argv[3], "-m") == 0) {
-      setSize = 1 << atoi(argv[4]);
-    } else {
-      PrintInfo();
-    }
-    if (strcmp(argv[5], "-t") == 0) {
-      numthreads = atoi(argv[6]);
-    } else {
-      PrintInfo();
-    }
-    if (strcmp(argv[7], "-r") == 0) {
-      malicious = atoi(argv[8]);
-      std::vector<std::thread> pThrds(nParties);
-      for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
-        pThrds[pIdx] = std::thread([&, pIdx]() {
-          party(nParties, setSize, pIdx, numthreads, malicious, 0);
-        });
+    case 11:
+      if (argv[1][0] == '-' && argv[1][1] == 'n') {
+        nParties = atoi(argv[2]);
+      } else {
+        printInfo();
       }
-      for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
-        pThrds[pIdx].join();
-    } else {
-      PrintInfo();
-    }
-    break;
-  case 2:
-    if (argv[1][0] == '-' && argv[1][1] == 'u') {
-      nParties = 3;
-      setSize = 1 << 3;
-      numthreads = 4;
-      malicious = 0;
-      std::vector<std::thread> pThrds(nParties);
-      for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
-        pThrds[pIdx] = std::thread([&, pIdx]() {
-          party(nParties, setSize, pIdx, numthreads, malicious, 0);
-        });
+      if (strcmp(argv[3], "-m") == 0) {
+        setSize = 1 << atoi(argv[4]);
+      } else if (strcmp(argv[3], "-mm") == 0) {
+        setSize = atoi(argv[4]);
+      } else {
+        printInfo();
       }
-      for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
-        pThrds[pIdx].join();
-    }
-    break;
-  default:
-    PrintInfo();
-    break;
+      if (argv[5][0] == '-' && argv[5][1] == 'p') {
+        pIdx = atoi(argv[6]);
+      } else {
+        printInfo();
+      }
+      if (argv[7][0] == '-' && argv[7][1] == 't') {
+        numthreads = atoi(argv[8]);
+      } else {
+        printInfo();
+      }
+      if (strcmp(argv[9], "-r") == 0) {
+        malicious = strcmp(argv[10], "1") == 0;
+        party(nParties, setSize, pIdx, numthreads, malicious, 1);
+      } else {
+        printInfo();
+      }
+      break;
+    case 9:
+      if (strcmp(argv[1], "-n") == 0) {
+        nParties = atoi(argv[2]);
+      } else {
+        printInfo();
+      }
+      if (strcmp(argv[3], "-m") == 0) {
+        setSize = 1 << atoi(argv[4]);
+      } else {
+        printInfo();
+      }
+      if (strcmp(argv[5], "-t") == 0) {
+        numthreads = atoi(argv[6]);
+      } else {
+        printInfo();
+      }
+      if (strcmp(argv[7], "-r") == 0) {
+        malicious = atoi(argv[8]);
+        std::vector<std::thread> pThrds(nParties);
+        for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+          pThrds[pIdx] = std::thread([&, pIdx]() {
+            party(nParties, setSize, pIdx, numthreads, malicious, 0);
+          });
+        }
+        for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+          pThrds[pIdx].join();
+        }
+      } else {
+        printInfo();
+      }
+      break;
+    case 2:
+      if (argv[1][0] == '-' && argv[1][1] == 'u') {
+        nParties = 3;
+        setSize = 1 << 3;
+        numthreads = 4;
+        malicious = 0;
+        std::vector<std::thread> pThrds(nParties);
+        for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+          pThrds[pIdx] = std::thread([&, pIdx]() {
+            party(nParties, setSize, pIdx, numthreads, malicious, 0);
+          });
+        }
+        for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+      }
+      break;
+    default:
+      printInfo();
+      break;
   }
   return 0;
 }

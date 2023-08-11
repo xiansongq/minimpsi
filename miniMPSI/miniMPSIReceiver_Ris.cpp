@@ -196,7 +196,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
       Matrix<block> userkey(nParties, 2);
       for (u64 j = 1; j < nParties; j++) {
         auto *g_ab = new unsigned char[crypto_core_ristretto255_BYTES];
-        crypto_scalarmult_ristretto255(g_ab, allSeeds[i], randomAk[j]);
+        crypto_scalarmult_ristretto255(g_ab, allSeeds[i], randomAk[j]); //NOLINT
         userkey[j][0] = toBlock(g_ab);
         userkey[j][1] = toBlock(g_ab + sizeof(block));
       }
