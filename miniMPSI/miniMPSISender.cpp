@@ -110,7 +110,6 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   Matrix<block> deval(setSize, 2);
   macoro::sync_wait(chl[0].recv((pax)));
 
-
 #ifdef Debug
   timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) +
                      " decode start");
@@ -170,7 +169,6 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   // OKVS encode for (inputs and g^(a_i*b_i) \xor (zeroshare values))
   Matrix<block> pax2(paxos.size(), 2);
 
-
 #ifdef Debug
   timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) +
                      " encode start");
@@ -186,7 +184,6 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   macoro::sync_wait(chl[0].send(paxos.size()));
   macoro::sync_wait(chl[0].send(coproto::copy(pax2)));
 
-
 #ifdef Debug
   PrintLine('-');
   std::cout << "sender encode allpx myIdx=" << myIdx << std::endl;
@@ -198,7 +195,6 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   }
   PrintLine('-');
 #endif
-
 
   timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " end");
   std::cout << timer << std::endl;

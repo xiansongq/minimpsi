@@ -87,7 +87,6 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   timer.setTimePoint("miniMPSI::reciver ris start");
 #endif
 
-
   auto *mG_K = new unsigned char[crypto_core_ristretto255_BYTES];
   for (u64 i = 0; i < setSize; i++) {
     allSeeds[i] = new unsigned char[crypto_core_ristretto255_BYTES];
@@ -103,14 +102,12 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   timer.setTimePoint("miniMPSI::reciver ris end");
 #endif
 
-
   std::vector<unsigned char *> randomAk(nParties);
   for (u64 i = 1; i < nParties; i++) {
     auto *point = new unsigned char[crypto_core_ristretto255_BYTES];
     macoro::sync_wait(chl[i].recv(point));
     randomAk[i] = point;
   }
-
 
 #ifdef Debug
   PrintLine('-');
@@ -178,7 +175,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   std::unordered_multiset<std::string> result(setSize);
 
   // The following multi-threaded program may fail to execute PSI when set >
-  // 2^10
+  // 2^20
   thrds.resize(numThreads);
   auto computeAllKey = [&](u64 idx) {
     u64 datalen = setSize / thrds.size();
@@ -187,16 +184,17 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
     if (idx == thrds.size() - 1) {
       endlen = setSize;
     }
-
     for (u64 i = startlen; i < endlen; i++) {
       for (u64 j = 0; j < nParties; j++) {
         allpx[i][0] = allpx[i][0] ^ zeroValue[j];
         allpx[i][1] = allpx[i][1] ^ zeroValue[j];
       }
+
       Matrix<block> userkey(nParties, 2);
       for (u64 j = 1; j < nParties; j++) {
         auto *g_ab = new unsigned char[crypto_core_ristretto255_BYTES];
-        crypto_scalarmult_ristretto255(g_ab, allSeeds[i], randomAk[j]); //NOLINT
+        crypto_scalarmult_ristretto255(g_ab, allSeeds[i],
+                                       randomAk[j]);  // NOLINT
         userkey[j][0] = toBlock(g_ab);
         userkey[j][1] = toBlock(g_ab + sizeof(block));
       }
@@ -211,9 +209,14 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
       std::cout << "userkey1: " << userkey[1][0] << " " << userkey[1][1]
                 << std::endl;
 #endif
-
-      result.insert(Ristretto225_to_string(userkey[1][0], userkey[1][1]));
+      if (numThreads > 1) {
+        std::lock_guard<std::mutex> lock(mtx);
+        result.insert(Ristretto225_to_string(userkey[1][0], userkey[1][1]));
+      } else {
+        result.insert(Ristretto225_to_string(userkey[1][0], userkey[1][1]));
+      }
     }
+
   };
   thrds.resize(numThreads);
   for (u64 i = 0; i < thrds.size(); i++) {
@@ -225,8 +228,9 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
 
   for (u64 i = 0; i < setSize; i++) {
     auto it = result.find(Ristretto225_to_string(allpx[i][0], allpx[i][1]));
-    if (it != result.end()) { outputs.push_back(reinputs[i]);
-}
+    if (it != result.end()) {
+      outputs.push_back(reinputs[i]);
+    }
   }
   timer.setTimePoint("miniMPSI::reciver end");
   std::cout << timer << std::endl;

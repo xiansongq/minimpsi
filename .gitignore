@@ -14,6 +14,14 @@ CMakeCache.txt
 .cache
 /frontend/frontend
 /volePSI/libvolePSI.a
+/volePSI/Makefile
+/volePSI/cmake_install.cmake
+Mkaefile
+findDependancies.cmake
+preamble.cmake
+volePSIConfig.cmake
+volePSIConfigVersion.cmake
+volePSITargets.cmake
 .cmake/
 # .clang-format
 # .clang-tidy
