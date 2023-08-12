@@ -32,14 +32,15 @@
 using namespace osuCrypto;  // NOLINT
 using namespace volePSI;    // NOLINT
 // #define Debug
-void printParamInfo(u64 nParties, u64 setSize, u64 numThreads, u64 StaParam,
+void printParamInfo(u64 nParties, u64 setSize, u64 numThreads,u64 cSecParam, u64 StaParam,
                     bool malicious) {
   std::cout << "number of parties: " << nParties << std::endl
             << "set size: " << setSize << std::endl
             << "numThreads: " << numThreads << std::endl
+            << "computation security parameters: " << cSecParam << std::endl
             << "statistical security parameters: " << StaParam << std::endl
             << "malicious model?  " << (malicious == 1 ? "yes" : "no")
-            << std::endl;
+            <<std::endl<<std::endl;
 }
 void printInfo() {
   std::cout << oc::Color::Green
@@ -56,7 +57,8 @@ void printInfo() {
             << "###############################################################"
                "######\n"
             << "###############################################################"
-               "######\n"<<oc::Color::Default;
+               "######\n"
+            << oc::Color::Default;
   std::cout << oc::Color::Blue << "Parameter description: \n"
             << oc::Color::Green << "-mpsi: Run the multiparity mini PSI.\n"
             << "      -n: number of parties.\n"
@@ -86,7 +88,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   u64 StaParam = 40;
   u64 bitSize = 128;
   if (flag == 1 || (flag == 0 && myIdx == 0)) {
-    printParamInfo(nParties, setSize, num_Threads, StaParam, malicious);
+    printParamInfo(nParties, setSize, num_Threads,SecParam, StaParam, malicious);
   }
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
@@ -145,25 +147,27 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     // create input sets
     std::vector<block> inputs(setSize);
     // The first element cannot be an intersection element
-    for (u64 i = 1; i < expectedIntersection + 1; i++)
+    for (u64 i = 0; i < expectedIntersection; i++)
       inputs[i] = prngSet.get<block>();
     prng1.SetSeed(block(myIdx, myIdx));
-    for (u64 i = expectedIntersection + 1; i < setSize; i++)
+    for (u64 i = expectedIntersection; i < setSize; i++)
       inputs[i] = prng1.get<block>();
-    inputs[0] = prng1.get<block>();
 
     volePSI::miniMPSIReceiver_Ris receiver;
+    Timer timer;
+    receiver.setTimer(timer);
     receiver.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
                   num_Threads);
     std::vector<block> ans = (receiver.receive(mPrngs, chls, num_Threads));
+    std::cout << receiver.getTimer() << std::endl;
     // intersection success rate
     if (ans.size() != expectedIntersection) {
       std::cout << "excute PSI error" << std::endl;
       return;
     }
     u64 len = 0;
-    for (auto i = 1; i < expectedIntersection + 1; i++) {
-      if (inputs[i] == ans[i - 1]) len++;
+    for (auto i = 0; i < expectedIntersection; i++) {
+      if (inputs[i] == ans[i]) len++;
     }
     std::cout << "instersection size is " << ans.size() << std::endl;
     std::cout << "intersection success rate " << std::setprecision(2)
@@ -172,16 +176,18 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     std::cout << std::endl;
   } else {
     std::vector<block> inputs(setSize);
-    for (u64 i = 1; i < expectedIntersection + 1; i++)
+    for (u64 i = 0; i < expectedIntersection; i++)
       inputs[i] = prngSet.get<block>();
     prng1.SetSeed(block(myIdx, myIdx));
-    for (u64 i = expectedIntersection + 1; i < setSize; i++)
+    for (u64 i = expectedIntersection; i < setSize; i++)
       inputs[i] = prng1.get<block>();
-    inputs[0] = prng1.get<block>();
     volePSI::miniMPSISender_Ris sender;
+    Timer timer;
+    sender.setTimer(timer);
     sender.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
                 num_Threads);
     (sender.send(mPrngs, chls, num_Threads));
+    std::cout << sender.getTimer() << std::endl;
   }
 }
 
@@ -190,7 +196,7 @@ void cpsi(const oc::CLP& cmd) {
   ValueShareType type =
       (cmd.getOr("st", 1) == 1) ? ValueShareType::Xor : ValueShareType::add32;
   u64 numThreads = cmd.getOr("nt", 1);
-  printParamInfo(2, setSize, numThreads, 40, 0);
+  printParamInfo(2, setSize, numThreads,128, 40, 0);
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
   PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
@@ -273,7 +279,7 @@ void volepsi(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 10);
   bool malicious = cmd.getOr("-malicious", 0) == 0 ? false : true;
   u64 numThreads = cmd.getOr("nt", 1);
-  printParamInfo(2, setSize, numThreads, 40, malicious);
+  printParamInfo(2, setSize, numThreads,128, 40, malicious);
 
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);

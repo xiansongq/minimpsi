@@ -26,7 +26,7 @@ REccPoint string_to_REccPoint(const std::string &str) {
         "Invalid string size for REccPoint conversion.");
   }
   std::array<u8, oc::REccPoint::size> buffer;
-  std::copy(str.begin(), str.end(), buffer.begin()); //NOLINT
+  std::copy(str.begin(), str.end(), buffer.begin());  // NOLINT
   oc::REccPoint point;
   try {
     point.fromBytes(buffer.data());
@@ -52,7 +52,7 @@ REccPoint vector_to_REccPoint(std::vector<u8> &data) {
   } catch (const std::runtime_error &e) {
     REllipticCurve curve;
     PRNG prng;
-    // 获取真随机数设备
+    // Get true random number device
     std::random_device rd;
     prng.SetSeed(block(rd(), rd()));
     REccNumber num;
@@ -91,17 +91,17 @@ REccPoint BitVector_to_REccPoint(const BitVector &bv) {
 
 REccPoint REccPoint_xor_u8(const REccPoint &point,
                            const std::vector<u8> &vecu) {
-  // 首先将 Point 转为 bitvector
+  // point to Bitvector
   BitVector vs = REccPoint_to_BitVector(point);
-  // 迭代
+  
   for (auto a : vecu) {
-    // 将 a 转为 bitvector
+    // a to Bitvector
     BitVector zs(a);
-    // 补齐zs的长度 使其与vs相同
+    // Make up the length of zs so it's the same as vs.
     zs.resize(vs.size());
     vs = vs ^ zs;
   }
-  // 异或后的结果 转为 REccPoint
+  // The result of XOR operation is converted to REccPoint.
   return BitVector_to_REccPoint(vs);
 }
 
@@ -120,7 +120,6 @@ oc::Matrix<u8> Matrix_xor(const oc::Matrix<u8> &a, const oc::Matrix<u8> &b) {
   return c;
 }
 oc::REccPoint REccPoint_xor(const REccPoint &a, const REccPoint &b) {
-  // 首先将 REccPoint 转为BitVector
   BitVector pa = REccPoint_to_BitVector(a);
   BitVector pb = REccPoint_to_BitVector(b);
   BitVector pc = pa ^ pb;
@@ -137,7 +136,8 @@ std::vector<u8> Matrix_to_vector(oc::Matrix<u8> &a) {
   return ans;
 }
 
-void Matrix_xor_Vector(const oc::Matrix<u8> &a, const std::vector<u8> &b) { //NOLINT:
+void Matrix_xor_Vector(const oc::Matrix<u8> &a,
+                       const std::vector<u8> &b) {  // NOLINT:
   u8 ans = 1;
   for (auto a : b) {
     ans = ans ^ a;
@@ -155,42 +155,40 @@ u64 checkThreadsNum(u64 numthreads, u64 setSize) {
 
 void PrintLine(char c) {
   int count = 60;
-  std::string line = std::string(count, c); //NOLINT:
+  std::string line = std::string(count, c);  // NOLINT:
   std::cout << line << std::endl;
 }
-block unsignend_char_to_block(const unsigned char *str){
-    block result;
-    std::memcpy(result.data(), str, sizeof(block));
-    return result;
+block unsignend_char_to_block(const unsigned char *str) {
+  block result;
+  std::memcpy(result.data(), str, sizeof(block));
+  return result;
 }
-std::vector<block> Ristretto225_to_block(const unsigned char *point){
+std::vector<block> Ristretto225_to_block(const unsigned char *point) {
   std::vector<block> ans;
   ans.push_back(toBlock(point));
-  ans.push_back(toBlock(point+sizeof(block)));
-  std::cout<<ans[0]<<" "<<ans[1]<<std::endl;
+  ans.push_back(toBlock(point + sizeof(block)));
+  std::cout << ans[0] << " " << ans[1] << std::endl;
   return ans;
 }
-unsigned char * Block_to_Ristretto225(const block &a,const block &b){
-  unsigned char * point =new unsigned char[crypto_core_ristretto255_BYTES];
+unsigned char *Block_to_Ristretto225(const block &a, const block &b) {
+  auto *point = new unsigned char[crypto_core_ristretto255_BYTES];
   memcpy(point, &a, sizeof(block));
   memcpy(point + sizeof(block), &b, sizeof(block));
   return point;
 }
 std::string Ristretto225_to_string(const block &a, const block &b) {
-    std::string result;
-    result.reserve(2 * sizeof(block));
+  std::string result;
+  result.reserve(2 * sizeof(block));
 
-    const unsigned char *aPtr = reinterpret_cast<const unsigned char *>(&a);
-    const unsigned char *bPtr = reinterpret_cast<const unsigned char *>(&b);
+  const auto *aPtr = reinterpret_cast<const unsigned char *>(&a);
+  const auto *bPtr = reinterpret_cast<const unsigned char *>(&b);
 
-    for (size_t i = 0; i < sizeof(block); ++i) {
-        result += aPtr[i];
-    }
-    for (size_t i = 0; i < sizeof(block); ++i) {
-        result += bPtr[i];
-    }
+  for (size_t i = 0; i < sizeof(block); ++i) {
+    result += aPtr[i];
+  }
+  for (size_t i = 0; i < sizeof(block); ++i) {
+    result += bPtr[i];
+  }
 
-    return result;
+  return result;
 }
-
-

@@ -3,13 +3,14 @@
 
 #include <iostream>
 #include <random>
+
 #include "cryptoTools/Common/block.h"
 #include "cryptoTools/Crypto/RCurve.h"
 #include "relic/relic.h"
 #include "relic/relic_core.h"
-#include "volePSI/Paxos.h"
 #include "sodium.h"
-using namespace osuCrypto;  //NOLINT
+#include "volePSI/Paxos.h"
+using namespace osuCrypto;  // NOLINT
 /* REccPoint to block */
 block REccPoint_to_block(const REccPoint &point);
 /* block to string */
@@ -45,5 +46,6 @@ block unsignend_char_to_block(const unsigned char *str);
 /* ristretto255 char 256 to 2 block */
 std::vector<block> Ristretto225_to_block(const unsigned char *point);
 /* 2 block to ristretto225 */
-unsigned char * Block_to_Ristretto225(const block &a,const block &b);
-std::string Ristretto225_to_string(const block &a,const block &b);
+unsigned char *Block_to_Ristretto225(const block &a, const block &b);
+/* Ristretto225 to string  */
+std::string Ristretto225_to_string(const block &a, const block &b);

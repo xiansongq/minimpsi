@@ -10,7 +10,6 @@
 #include <ostream>
 #include <string>
 
-#include "PsiDefines.h"
 #include "coproto/Common/Defines.h"
 #include "cryptoTools/Common/block.h"
 #include "cryptoTools/Crypto/RCurve.h"
@@ -37,8 +36,8 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   prng.SetSeed(toBlock(myIdx, myIdx));
 
   std::vector<std::thread> thrds(nParties);
-  std::vector<block> reinputs(setSize);  // save original input
-  std::mutex mtx;                        // global mutex
+  std::vector<block> reinputs(setSize);
+  std::mutex mtx;
   reinputs = inputs;
   using Block = typename Rijndael256Enc::Block;
   const std::uint8_t userKeyArr[] = {
@@ -49,40 +48,28 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   Block userKey = Block256(userKeyArr);
   Rijndael256Enc encKey(userKey);
 
-  timer.setTimePoint("miniMPSI::reciver start");
+  setTimePoint("miniMPSI::reciver start");
   // if malicious mode is enabled
   if (malicious == true) {
-    thrds.resize(setSize);
-    for (auto idx = 0; idx < thrds.size(); idx++) {
-      thrds[idx] = std::thread([&, idx]() {
-        u64 datalen = setSize / thrds.size();
-        u64 startlen = idx * datalen;
-        u64 endlen = (idx + 1) * datalen;
-        if (idx == thrds.size() - 1) {
-          endlen = setSize;
-        }
-        oc::RandomOracle hash(sizeof(block));
-        for (auto i = startlen; i < endlen; i++) {
-          hash.Reset();
-          hash.Update(inputs[i]);
-          block hh;
-          hash.Final(hh);
-          inputs[i] = hh;
-        }
-      });
+    oc::RandomOracle hash(sizeof(block));
+    for (auto i = 0; i < setSize; i++) {
+      hash.Reset();
+      hash.Update(inputs[i]);
+      block hh;
+      hash.Final(hh);
+      inputs[i] = hh;
     }
-    for (auto &thread : thrds) {
-      thread.join();
-    }
+  setTimePoint("miniMPSI::receiver hash_input");
   }
+
   paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(0, 0));
 
   // create zeroshare values
   zeroValue[0] = toBlock(0, 0);
-  // #pragma omp parallel for num_threads(numThreads)
   for (u64 i = 1; i < nParties; i++) {
     zeroValue[i] = zeroValue[i] ^ mseed[i].get<block>();
   }
+
 #ifdef Debug
   timer.setTimePoint("miniMPSI::reciver ris start");
 #endif
@@ -124,6 +111,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   //  OKVS encode for (inputs, g_(a_i))
   Matrix<block> pax(paxos.size(), 2);
   paxos.solve<block>(inputs, vals, pax, &prng, numThreads);
+
 // send parameters of OKVS encode results
 #pragma omp parallel for num_threads(numThreads)
   for (u64 i = 1; i < nParties; i++) {
@@ -133,7 +121,6 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
 
   Matrix<block> allpx(setSize, 2);
   thrds.resize(nParties);
-
   for (auto idx = 1; idx < thrds.size(); idx++) {
     thrds[idx] = std::thread([&, idx]() {
       size_t size = 0;
@@ -216,7 +203,6 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
         result.insert(Ristretto225_to_string(userkey[1][0], userkey[1][1]));
       }
     }
-
   };
   thrds.resize(numThreads);
   for (u64 i = 0; i < thrds.size(); i++) {
@@ -232,9 +218,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
       outputs.push_back(reinputs[i]);
     }
   }
-  timer.setTimePoint("miniMPSI::reciver end");
-  std::cout << timer << std::endl;
-  std::cout << "outputs size: " << outputs.size() << "\n";
+  setTimePoint("miniMPSI::reciver end");
   return outputs;
 }
 void miniMPSIReceiver_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,

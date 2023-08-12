@@ -15,8 +15,6 @@
 #include <memory>
 #include <thread> //NOLINT
 #include <unordered_set>
-#include "miniMPSI/PsiDefines.h"
-
 #include "miniMPSI/tools.h"
 #include "volePSI/Paxos.h"
 using namespace osuCrypto; // NOLINT
@@ -38,7 +36,6 @@ public:
   std::vector<block> outputs;
 		
 
-  Timer timer;
   std::vector<block> receive(std::vector<PRNG> &mseed, std::vector<Socket> &chl,
                              u64 numThreads);
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,

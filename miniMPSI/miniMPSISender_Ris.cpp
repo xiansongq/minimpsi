@@ -1,5 +1,7 @@
 // Copyright 2023 xiansongq.
 
+#include "miniMPSI/miniMPSISender_Ris.h"
+
 #include <sodium/crypto_core_ristretto255.h>
 #include <sodium/crypto_scalarmult_ristretto255.h>
 
@@ -14,7 +16,6 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "macoro/sync_wait.h"
 #include "macoro/thread_pool.h"
-#include "miniMPSI/miniMPSISender_Ris.h"
 #include "miniMPSI/tools.h"
 #include "volePSI/RsCpsi.h"
 //  #define Debug
@@ -38,7 +39,7 @@ void miniMPSISender_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
 
 void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
                               std::vector<Socket> &chl, u64 numThreads) {
-  // define variables
+ 
   std::vector<block> zeroValue(nParties);
 
   PRNG prng;
@@ -55,39 +56,26 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   };
   Block userKey = Block256(userKeyArr);
   Rijndael256Dec decKey(userKey);
-  // std::mutex mtx;   // global mutex
-  timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
+  // std::mutex mtx;   
+  setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
 
   // if malicious mode is enabled
   if (malicious == true) {
-    thrds.resize(setSize);
-    for (auto idx = 0; idx < thrds.size(); idx++) {
-      thrds[idx] = std::thread([&, idx]() {
-        u64 datalen = setSize / thrds.size();
-        u64 startlen = idx * datalen;
-        u64 endlen = (idx + 1) * datalen;
-        if (idx == thrds.size() - 1) {
-          endlen = setSize;
-        }
-        oc::RandomOracle hash(sizeof(block));
-        for (auto i = startlen; i < endlen; i++) {
-          hash.Reset();
-          hash.Update(inputs[i]);
-          block hh;
-          hash.Final(hh);
-          inputs[i] = hh;
-        }
-      });
+    oc::RandomOracle hash(sizeof(block));
+    for (auto i = 0; i < setSize; i++) {
+      hash.Reset();
+      hash.Update(inputs[i]);
+      block hh;
+      hash.Final(hh);
+      inputs[i] = hh;
     }
-    for (auto &thread : thrds) {
-      thread.join();
-    }
+  setTimePoint("miniMPSI::sender hash_input");
   }
+
   paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(0, 0));
   // create zeroshare values
   zeroValue[0] = toBlock(0, 0);
 
-#pragma omp parallel for num_threads(numThreads)
   for (u64 i = 0; i < nParties; i++) {
     if (i != myIdx) {
       zeroValue[i] = zeroValue[i] ^ mseed[i].get<block>();
@@ -122,6 +110,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) +
                      " decode end");
 #endif
+
   Matrix<block> allpx(setSize, 2);
 
 #ifdef Debug
@@ -196,8 +185,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   PrintLine('-');
 #endif
 
-  timer.setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " end");
-  std::cout << timer << std::endl;
+  setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " end");
   for (u64 i = 0; i < chl.size(); i++) {
     if (i != myIdx) {
       macoro::sync_wait(chl[i].flush());
