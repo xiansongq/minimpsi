@@ -29,9 +29,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
   PRNG prng;
   PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
 
-  std::vector<unsigned char *> allPoints;
   std::vector<unsigned char *> allSeeds(setSize);
-  std::vector<block> val(setSize);
   Matrix<block> vals(setSize, 2);
   prng.SetSeed(toBlock(myIdx, myIdx));
 
@@ -50,7 +48,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
 
   setTimePoint("miniMPSI::reciver start");
   // if malicious mode is enabled
-  if (malicious == true) {
+  if (malicious) {
     oc::RandomOracle hash(sizeof(block));
     for (auto i = 0; i < setSize; i++) {
       hash.Reset();
@@ -59,7 +57,7 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
       hash.Final(hh);
       inputs[i] = hh;
     }
-  setTimePoint("miniMPSI::receiver hash_input");
+    setTimePoint("miniMPSI::receiver hash_input");
   }
 
   paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(0, 0));
@@ -180,10 +178,18 @@ std::vector<block> miniMPSIReceiver_Ris::receive(std::vector<PRNG> &mseed,
       Matrix<block> userkey(nParties, 2);
       for (u64 j = 1; j < nParties; j++) {
         auto *g_ab = new unsigned char[crypto_core_ristretto255_BYTES];
-        crypto_scalarmult_ristretto255(g_ab, allSeeds[i],
-                                       randomAk[j]);  // NOLINT
+        crypto_scalarmult_ristretto255(g_ab, allSeeds[i],   // NOLINT
+                                       randomAk[j]);  
         userkey[j][0] = toBlock(g_ab);
         userkey[j][1] = toBlock(g_ab + sizeof(block));
+        if (malicious) {
+          oc::RandomOracle hash(sizeof(block));
+          hash.Update(userkey[j][0]);
+          hash.Final(userkey[j][0]);
+          hash.Reset();
+          hash.Update(userkey[j][1]);
+          hash.Final(userkey[j][1]);
+        }
       }
       if (nParties > 2) {
         for (u64 k = 2; k < nParties; k++) {

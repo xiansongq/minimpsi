@@ -6,10 +6,16 @@
 
 #include <iostream>
 // #include <stdarg.h>
+#include <cryptoTools/Common/CLP.h>
+#include <cryptoTools/Common/Timer.h>
+#include <macoro/sync_wait.h>
+
 #include <ostream>
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "cPSI/cPsiReceiver.h"
+#include "cPSI/cPsiSender.h"
 #include "coproto/Socket/AsioSocket.h"
 #include "cryptoTools/Common/Defines.h"
 #include "cryptoTools/Common/Log.h"
@@ -32,15 +38,16 @@
 using namespace osuCrypto;  // NOLINT
 using namespace volePSI;    // NOLINT
 // #define Debug
-void printParamInfo(u64 nParties, u64 setSize, u64 numThreads,u64 cSecParam, u64 StaParam,
-                    bool malicious) {
+void printParamInfo(u64 nParties, u64 setSize, u64 numThreads, u64 cSecParam,
+                    u64 StaParam, bool malicious) {
   std::cout << "number of parties: " << nParties << std::endl
             << "set size: " << setSize << std::endl
             << "numThreads: " << numThreads << std::endl
             << "computation security parameters: " << cSecParam << std::endl
             << "statistical security parameters: " << StaParam << std::endl
             << "malicious model?  " << (malicious == 1 ? "yes" : "no")
-            <<std::endl<<std::endl;
+            << std::endl
+            << std::endl;
 }
 void printInfo() {
   std::cout << oc::Color::Green
@@ -88,7 +95,8 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   u64 StaParam = 40;
   u64 bitSize = 128;
   if (flag == 1 || (flag == 0 && myIdx == 0)) {
-    printParamInfo(nParties, setSize, num_Threads,SecParam, StaParam, malicious);
+    printParamInfo(nParties, setSize, num_Threads, SecParam, StaParam,
+                   malicious);
   }
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
@@ -196,7 +204,7 @@ void cpsi(const oc::CLP& cmd) {
   ValueShareType type =
       (cmd.getOr("st", 1) == 1) ? ValueShareType::Xor : ValueShareType::add32;
   u64 numThreads = cmd.getOr("nt", 1);
-  printParamInfo(2, setSize, numThreads,128, 40, 0);
+  printParamInfo(2, setSize, numThreads, 128, 40, 0);
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
   PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
@@ -219,6 +227,7 @@ void cpsi(const oc::CLP& cmd) {
   oc::Matrix<u8> senderValues(sendSet.size(), sizeof(block));
   std::memcpy(senderValues.data(), sendSet.data(),
               sendSet.size() * sizeof(block));
+  std::memcpy(senderValues[7].data(), recvSet[8].data(), sizeof(block));
   Timer timer1;
   Timer timer2;
 
@@ -248,6 +257,7 @@ void cpsi(const oc::CLP& cmd) {
         auto rv = *(block*)&rShare.mValues(k, 0);
         auto sv = *(block*)&sShare.mValues(k, 0);
         auto act = (rv ^ sv);
+        std::cout << recvSet[i] << " " << rv << " " << sv << "\n";
         if (recvSet[i] != act) {
           if (!failed)
             std::cout << i << " ext " << recvSet[i] << ", act " << act << " = "
@@ -279,7 +289,7 @@ void volepsi(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 10);
   bool malicious = cmd.getOr("-malicious", 0) == 0 ? false : true;
   u64 numThreads = cmd.getOr("nt", 1);
-  printParamInfo(2, setSize, numThreads,128, 40, malicious);
+  printParamInfo(2, setSize, numThreads, 128, 40, malicious);
 
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
@@ -319,8 +329,64 @@ void volepsi(const oc::CLP& cmd) {
             << std::endl;
 }
 
+void mycPSI(u64 myIdx) {
+  std::cout << "myIdx: " << myIdx << std::endl;
+  u64 setSize = 1 << 3;
+  std::vector<block> recvSet(setSize);
+  std::vector<block> sendSet(setSize);
+  PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
+  PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
+  u64 expeIntersection = setSize / 2;
+  for (u64 i = 0; i < expeIntersection; i++) {
+    sendSet[i].set<u64>(0, i);
+    recvSet[i].set<u64>(0, i);
+  }
+  for (u64 i = expeIntersection; i < setSize; i++) {
+    recvSet[i] = prng1.get<block>();
+    sendSet[i] = prng1.get<block>();
+  }
+  oc::Matrix<u8> senderValues(sendSet.size(), sizeof(block));
+  std::memcpy(senderValues.data(), sendSet.data(),
+              sendSet.size() * sizeof(block));
+  auto sockets = coproto::LocalAsyncSocket::makePair();
+  std::vector<std::thread> pThrds(2);
+  cPsiReceiver receive;
+  cPsiReceiver::Sharing rShare;
+  cPsiSender sender;
+  cPsiSender::Sharing sShare;
+  // if (myIdx == 0) {
+  //   cPsiReceiver receive;
+  //   cPsiReceiver::Sharing rShare;
+  //   (receive.receive(recvSet, rShare, sockets[0]));
+
+  // } else {
+  //   cPsiSender sender;
+  //   cPsiSender::Sharing sShare;
+  //   (sender.send(sendSet, senderValues, sShare, sockets[1]));
+  // }
+  for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+    pThrds[pIdx] = std::thread([&, pIdx]() {
+      if (pIdx == 0){
+
+      receive.init(setSize,setSize,sizeof(block),40,1,toBlock(0,0),receive.ValueShareType::Xor);
+        (receive.receive(recvSet, rShare, sockets[0]));
+      }
+      else
+      {
+      sender.init(setSize,setSize,sizeof(block),40,1,toBlock(0,0),sender.ValueShareType::Xor);
+
+        (sender.send(sendSet, senderValues, sShare, sockets[1]));
+      }
+    });
+  }
+  for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+    pThrds[pIdx].join();
+  }
+}
+
 int main(int argc, char** argv) {
   oc::CLP cmd(argc, argv);
+  // mycPSI(myIdx);
   if (cmd.isSet("cpsi")) {
     cpsi(cmd);
   } else if (cmd.isSet("volepsi")) {

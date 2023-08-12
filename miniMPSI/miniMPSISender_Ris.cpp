@@ -39,7 +39,6 @@ void miniMPSISender_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
 
 void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
                               std::vector<Socket> &chl, u64 numThreads) {
- 
   std::vector<block> zeroValue(nParties);
 
   PRNG prng;
@@ -56,11 +55,11 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   };
   Block userKey = Block256(userKeyArr);
   Rijndael256Dec decKey(userKey);
-  // std::mutex mtx;   
+  // std::mutex mtx;
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
 
   // if malicious mode is enabled
-  if (malicious == true) {
+  if (malicious) {
     oc::RandomOracle hash(sizeof(block));
     for (auto i = 0; i < setSize; i++) {
       hash.Reset();
@@ -69,7 +68,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
       hash.Final(hh);
       inputs[i] = hh;
     }
-  setTimePoint("miniMPSI::sender hash_input");
+    setTimePoint("miniMPSI::sender hash_input");
   }
 
   paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(0, 0));
@@ -141,6 +140,14 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
       crypto_scalarmult_ristretto255(g_ab, mK, g_a);  // NOLINT
       allpx[i][0] = toBlock(g_ab);
       allpx[i][1] = toBlock(g_ab + sizeof(block));
+      if (malicious) {
+        oc::RandomOracle hash(sizeof(block));
+        hash.Update(allpx[i][0]);
+        hash.Final(allpx[i][0]);
+        hash.Reset();
+        hash.Update(allpx[i][1]);
+        hash.Final(allpx[i][1]);
+      }
       for (u64 j = 0; j < nParties; j++) {
         allpx[i][0] = allpx[i][0] ^ zeroValue[j];
         allpx[i][1] = allpx[i][1] ^ zeroValue[j];

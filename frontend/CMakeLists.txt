@@ -7,7 +7,7 @@ add_executable(frontend  ${SRCS} )
 # FIND_PACKAGE(OpenMP REQUIRED)
 # target_link_libraries(frontend volePSI OpenMP::OpenMP_CXX miniMPSI )
 
-target_link_libraries(frontend volePSI  miniMPSI )
+target_link_libraries(frontend volePSI  miniMPSI cPSI)
 
 
 if(VOLE_PSI_NO_LTO)
