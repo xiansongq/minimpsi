@@ -1,17 +1,16 @@
-#pragma  once
-
-#include "volePSI/Defines.h"
-#include "volePSI/config.h"
-#include "sodium.h"
+#pragma once
 
 #include "cryptoTools/Common/BitVector.h"
 #include "cryptoTools/Common/CuckooIndex.h"
 #include "cryptoTools/Common/Timer.h"
 #include "cryptoTools/Crypto/PRNG.h"
 #include "cryptoTools/Network/Channel.h"
+#include "sodium.h"
+#include "volePSI/Defines.h"
 #include "volePSI/GMW/Gmw.h"
 #include "volePSI/RsOpprf.h"
 #include "volePSI/SimpleIndex.h"
+#include "volePSI/config.h"
 
 namespace volePSI {
 class cPsiReceiver : public oc::TimerAdapter {
@@ -32,10 +31,8 @@ class cPsiReceiver : public oc::TimerAdapter {
     // elements. These values are from the sender.
     oc::Matrix<u8> mValues;
 
-    // The mapping of the senders input rows to output rows.
-    // Each input row might have been mapped to one of three
-    // possible output rows.
-    std::vector<std::array<u64, 3>> mMapping;
+    // The mapping of the receiver's input rows to output rows.
+    std::vector<u64> mMapping;
   };
   void init(u64 senderSize, u64 receiverSize, u64 mValueByteLength, u64 mSSp,
             u64 numThreads, block seed, ValueShareType mType);
