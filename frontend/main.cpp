@@ -95,6 +95,8 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   u64 StaParam = 40;
   u64 bitSize = 128;
   u64 leaderParter = nParties - 1;
+  std::mutex mtx;
+
   if (flag == 1 || (flag == 0 && myIdx == 0)) {
     printParamInfo(nParties, setSize, num_Threads, SecParam, StaParam,
                    malicious);
@@ -153,34 +155,116 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     mPrngs[i].SetSeed(zsSeeds[myIdx][i]);
   }
 
-#pragma region inputs
   std::vector<block> inputs(setSize);
-  // The first element cannot be an intersection element
   for (u64 i = 0; i < expectedIntersection; i++)
     inputs[i] = prngSet.get<block>();
   prng1.SetSeed(block(myIdx, myIdx));
   for (u64 i = expectedIntersection; i < setSize; i++)
     inputs[i] = prng1.get<block>();
-#pragma region iputs
+  std::vector<block> zeroValue(nParties);
 
-  std::vector<miniMPSISender_Ris> senderRis(nParties);
-  miniMPSIReceiver_Ris receiver;
+  std::vector<miniMPSIReceiver_Ris> receiver(nParties);
+  std::vector<Timer> timers(nParties);
+  miniMPSISender_Ris sender;
 
-  if (myIdx == leaderParter) {
-    receiver.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
-                  num_Threads);
-    // receiver.receive(mPrngs, chls, num_Threads);
+  if (myIdx != leaderParter) {
+    sender.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
+                num_Threads);
+    Timer timer;
+    sender.setTimer(timer);
   } else {
-    std::vector<std::thread> pThrds(nParties);
-    for (u64 pIdx = 1; pIdx < pThrds.size(); ++pIdx) {
+    zeroValue[0] = toBlock(0, 0);
+    for (u64 i = 0; i < nParties; i++) {
+      if (myIdx != i) zeroValue[i] = zeroValue[i] ^ mPrngs[i].get<block>();
+    }
+    std::vector<std::thread> pThrds(nParties - 1);
+    for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
       pThrds[pIdx] = std::thread([&, pIdx]() {
-        if (pIdx != leaderParter)
-          senderRis[pIdx].init(128, 40, nParties, myIdx, setSize, bitSize,
-                               inputs, malicious, num_Threads);
-        // senderRis[pIdx].send(mPrngs, chls, num_Threads);
+        receiver[pIdx].init(128, 40, nParties, myIdx, setSize, bitSize, inputs,
+                            malicious, num_Threads);
+        // if(receiver[pIdx].mTimer)
+        //     {
+        // Timer timer;
+        receiver[pIdx].setTimer(timers[pIdx]);
+        // }
       });
     }
-    for (u64 pIdx = 1; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+    for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+  }
+
+  std::vector<block> allpx2(setSize);
+  std::vector<block> keys(setSize);
+  std::unordered_multiset<block> result;
+  if (myIdx != leaderParter) {
+    sender.send(mPrngs, chls[leaderParter], num_Threads);
+    std::cout << sender.getTimer() << std::endl;
+  } else {
+    std::vector<std::thread> pThrds(nParties - 1);
+    for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+      pThrds[pIdx] = std::thread([&, pIdx]() {
+        auto ans = receiver[pIdx].receive(mPrngs, chls[pIdx], num_Threads);
+        if (nParties > 2) {
+          for (u64 j = 0; j < setSize; j++) {
+            allpx2[j] = allpx2[j] ^ ans[0][j];
+            keys[j] = keys[j] ^ ans[1][j];
+          }
+        } else {
+          allpx2 = ans[0];
+          keys = ans[1];
+        }
+      });
+    }
+    for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+  }
+
+  if (myIdx == leaderParter) {
+    std::vector<std::thread> pThrds(num_Threads);
+    for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
+      pThrds[pIdx] = std::thread([&, pIdx]() {
+        u64 datalen = setSize / pThrds.size();
+        u64 startlen = pIdx * datalen;
+        u64 endlen = (pIdx + 1) * datalen;
+        if (pIdx == pThrds.size() - 1) {
+          endlen = setSize;
+        }
+        for (u64 i = startlen; i < endlen; ++i) {
+          for (u64 j = 0; j < nParties; j++) {
+            allpx2[i] = allpx2[i] ^ zeroValue[j];
+          }
+          if (num_Threads > 1) {
+            std::lock_guard<std::mutex> lock(mtx);
+            result.insert(keys[i]);
+          } else {
+            result.insert(keys[i]);
+          }
+        }
+      });
+    }
+    for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+    std::vector<block> outputs;
+    for (u64 i = 0; i < setSize; i++) {
+      auto it = result.find(allpx2[i]);
+      if (it != result.end()) {
+        outputs.push_back(inputs[i]);
+      }
+    }
+    timers[0].setTimePoint("miniMPSI::receiver  end");
+    std::cout << timers[0] << std::endl;
+    // intersection success rate
+    if (outputs.size() != expectedIntersection) {
+      std::cout << "excute PSI error" << std::endl;
+      return;
+    }
+    u64 len = 0;
+    for (auto i = 0; i < expectedIntersection; i++) {
+      if (inputs[i] == outputs[i]) len++;
+    }
+    std::cout << "instersection size is " << outputs.size() << std::endl;
+    std::cout << "intersection success rate " << std::fixed
+              << std::setprecision(2)
+              << static_cast<double>(len) / expectedIntersection * 100 << "%"
+              << std::endl;
+    std::cout << std::endl;
   }
 
   // if (myIdx == leaderParter) {

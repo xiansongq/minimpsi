@@ -4,6 +4,7 @@
 
 #include <sodium/crypto_core_ristretto255.h>
 #include <sodium/crypto_scalarmult_ristretto255.h>
+#include <sodium/utils.h>
 
 #include <cstddef>
 #include <exception>
@@ -19,8 +20,9 @@
 #include "macoro/sync_wait.h"
 #include "macoro/thread_pool.h"
 #include "miniMPSI/tools.h"
+#include "volePSI/Defines.h"
 #include "volePSI/RsCpsi.h"
-#define Debug
+// #define Debug
 #define Len 2
 namespace volePSI {
 
@@ -39,12 +41,12 @@ void miniMPSISender_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
   this->numThreads = numThreads;
 }
 
-void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
-                              std::vector<Socket> &chl, u64 numThreads) {
+void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl,
+                              u64 numThreads) {
   std::vector<block> zeroValue(nParties);
   u64 leaderParty = nParties - 1;
   PRNG prng;
-  PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
+  PRNG prng1;
 
   prng.SetSeed(toBlock(myIdx, myIdx));
 
@@ -73,12 +75,10 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
     setTimePoint("miniMPSI::sender hash_input");
   }
 
-  paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(0, 0));
+  paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(1, 1));
   // create zeroshare values
   zeroValue[0] = toBlock(0, 0);
-  for (int i = 0; i < nParties; i++) {
-    std::cout << zeroValue[i] << std::endl;
-  }
+
   for (u64 i = 0; i < nParties; i++) {
     if (i != myIdx) {
       zeroValue[i] = zeroValue[i] ^ mseed[i].get<block>();
@@ -88,17 +88,18 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   auto *mK = new unsigned char[crypto_core_ristretto255_SCALARBYTES];
   auto *mG_K = new unsigned char[crypto_core_ristretto255_BYTES];
   // crypto_core_ristretto255_scalar_random(mK);
+  prng1.SetSeed(toBlock(myIdx,myIdx));
   prng1.implGet(mK, crypto_core_ristretto255_BYTES);
 
   crypto_scalarmult_ristretto255_base(mG_K, mK);  // g^ai
-  macoro::sync_wait(chl[leaderParty].send(mG_K));
 
+  macoro::sync_wait(chl.send(mG_K));
   // receive parameters of OKVS result vector
   size_t size = 0;
-  macoro::sync_wait(chl[leaderParty].recv(size));
+  macoro::sync_wait(chl.recv(size));
   Matrix<block> pax(size, 2);
   Matrix<block> deval(setSize, 2);
-  macoro::sync_wait(chl[leaderParty].recv((pax)));
+  macoro::sync_wait(chl.recv((pax)));
 
 #ifdef Debug
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " decode start");
@@ -138,9 +139,18 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
       auto *g_ab = new unsigned char[crypto_core_ristretto255_BYTES];
 
       g_a = Block_to_Ristretto225(deval[i][0], deval[i][1]);
+      // std::cout<<"g_a: i "<<i<<" "<<toBlock(g_a)<<" "<<toBlock(g_a+sizeof(block))<<"\n";
+
       auto g_f = decKey.decBlock((Block256(g_a)));
       g_a = g_f.data();
       crypto_scalarmult_ristretto255(g_ab, mK, g_a);  // NOLINT
+      // std::cout<<"g_ab: i "<<i<<" "<<toBlock(g_ab)<<" "<<toBlock(g_ab+sizeof(block))<<"\n";
+
+      // if(sodium_is_zero(g_ab, crypto_core_ristretto255_SCALARBYTES)==1){
+      //   crypto_core_ristretto255_random(g_ab);
+      // }
+      // std::cout<<"g_ab: i "<<i<<" "<<toBlock(g_ab)<<" "<<toBlock(g_ab+sizeof(block))<<"\n";
+
       /*
       When the number of participants is two, shorter data can be intercepted
       keyLength=40+log(setSize*setSize)
@@ -181,8 +191,8 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " encode end");
 #endif
 
-  macoro::sync_wait(chl[leaderParty].send(paxos.size()));
-  macoro::sync_wait(chl[leaderParty].send(coproto::copy(pax2)));
+  macoro::sync_wait(chl.send(paxos.size()));
+  macoro::sync_wait(chl.send(coproto::copy(pax2)));
 
 #ifdef Debug
   PrintLine('-');
@@ -194,11 +204,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed,
 #endif
 
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " end");
-  for (u64 i = 0; i < chl.size(); i++) {
-    if (i != myIdx) {
-      macoro::sync_wait(chl[i].flush());
-      chl[i].close();
-    }
-  }
+
+  macoro::sync_wait(chl.flush());
 }
 }  // namespace volePSI
