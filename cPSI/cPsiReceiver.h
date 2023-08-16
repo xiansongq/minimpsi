@@ -4,6 +4,7 @@
 #include "cryptoTools/Common/CuckooIndex.h"
 #include "cryptoTools/Common/Timer.h"
 #include "cryptoTools/Crypto/PRNG.h"
+#include "cryptoTools/Crypto/SodiumCurve.h"
 #include "cryptoTools/Network/Channel.h"
 #include "sodium.h"
 #include "volePSI/Defines.h"
@@ -11,7 +12,8 @@
 #include "volePSI/RsOpprf.h"
 #include "volePSI/SimpleIndex.h"
 #include "volePSI/config.h"
-
+using osuCrypto::Sodium::Monty25519;
+using osuCrypto::Sodium::Scalar25519;
 namespace volePSI {
 class cPsiReceiver : public oc::TimerAdapter {
  public:

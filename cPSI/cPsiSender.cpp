@@ -9,9 +9,10 @@
 #include <memory>
 
 #include "miniMPSI/tools.h"
+#include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
 using namespace osuCrypto;
-#define Debug
+// #define Debug
 namespace volePSI {
 
 void cPsiSender::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
@@ -29,15 +30,23 @@ void cPsiSender::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
 void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
                       Socket& chl) {
   // choise a random curver value
-  PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
+  using Block = typename Rijndael256Enc::Block;
+  const std::uint8_t userKeyArr[] = {
+      0x6e, 0x49, 0x0e, 0xe6, 0x2b, 0xa8, 0xf4, 0x0a, 0x95, 0x83, 0xff,
+      0xa1, 0x59, 0xa5, 0x9d, 0x33, 0x1d, 0xa6, 0x15, 0xcd, 0x1e, 0x8c,
+      0x75, 0xe1, 0xea, 0xe3, 0x35, 0xe4, 0x76, 0xed, 0xf1, 0xdf,
+  };
+  Block userKey = Block256(userKeyArr);
+  Rijndael256Dec decKey(userKey);
+  PRNG prng;
+  block seed = oc::sysRandomSeed();
+  prng.SetSeed(seed);
+  Scalar25519 mK(prng);
 
-  auto *mk = new unsigned char[crypto_core_ristretto255_SCALARBYTES];
-  prng1.implGet(mk, crypto_core_ristretto255_BYTES);
-
-  auto *mg_k = new unsigned char[crypto_core_ristretto255_BYTES];
-  crypto_core_ristretto255_scalar_random(mk);
-  crypto_scalarmult_ristretto255_base(mg_k, mk);
-  macoro::sync_wait(chl.send(mg_k));
+  Monty25519 mG_k = {Monty25519::wholeGroupGenerator * mK};
+  // send g^a
+  setTimePoint("cpsi:sender start");
+  macoro::sync_wait(chl.send(mG_k));
   Baxos paxos;
   paxos.init(senderSize, 1 << 14, 3, mSsp, PaxosParam::GF128, block(0, 0));
   size_t size;
@@ -45,20 +54,17 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   Matrix<block> pax(size, 2);
 
   macoro::sync_wait(chl.recv(pax));  // NOLINT
-  // std::cout << "send pax\n";
-  // for (u64 i = 0; i < paxos.size(); i++) {
-  //   std::cout << pax(i, 0) << "  " << pax(i, 1) << "\n";
-  // }
-  // std::cout << "---";
   Matrix<block> deval(receiverSize, 2);
   paxos.decode<block>(Y, deval, pax, numThreads);
-  // 计算 g^a^b
-  // u64 keyBitLength = 2 * sizeof(block);
+
+#ifdef Debug
   std::cout << "sender decode\n";
   for (u64 i = 0; i < receiverSize; i++) {
     std::cout << "decode i: " << i << " " << deval[i][0] << " " << deval[i][1]
               << std::endl;
   }
+#endif
+
   u64 keyBitLength = mSsp + oc::log2ceil(receiverSize);
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
   Matrix<block> allpx(receiverSize, 2);
@@ -70,47 +76,34 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   Matrix<u8>::iterator TvIter;
   Matrix<u8>::iterator rIter;
   std::vector<block>::iterator TyIter;
-  // The OPPRF input value of the i'th input under the j'th cuckoo
-  // hash function.
   Ty.resize(senderSize);
-
-  // The value associated with the k'th OPPRF input
   Tv.resize(senderSize, keyByteLength + values.cols(),
             oc::AllocType::Uninitialized);
-
-  // The special value assigned to the i'th bin.
   r.resize(senderSize, keyByteLength, oc::AllocType::Uninitialized);
   s.mValues.resize(senderSize, values.cols(), oc::AllocType::Uninitialized);
-        mPrng.get<u8>(s.mValues);
-        mPrng.get<u8>(r);
+  mPrng.get<u8>(s.mValues);
+  mPrng.get<u8>(r);
 
   TvIter = Tv.begin();
   rIter = r.begin();
   TyIter = Ty.begin();
-  std::cout << "sender mg_k: " << toBlock(mg_k) << " " << toBlock(mg_k + sizeof(block))
-            << "\n";
 
   oc::RandomOracle hash(sizeof(block));
   for (u64 i = 0; i < receiverSize; i++) {
-    auto* g_a = new unsigned char[crypto_core_ristretto255_BYTES];
-    auto* g_ab = new unsigned char[crypto_core_ristretto255_BYTES];
-    g_a = Block_to_Ristretto225(deval[i][0], deval[i][1]);
-    std::cout << "g_a: " << toBlock(g_a) << " " << toBlock(g_a + sizeof(block))
-              << "\n";
-    crypto_scalarmult_ristretto255(g_ab, mk, g_a);  // NOLINT
+    auto* g_a = new unsigned char[crypto_scalarmult_BYTES];
+    mempcpy(g_a, &deval[i][0], sizeof(block));
+    mempcpy(g_a + sizeof(block), &deval[i][1], sizeof(block));
+    auto g_f = decKey.decBlock((Block256(g_a)));
+    g_a = g_f.data();
+    Monty25519 g_bi;
+    g_bi.fromBytes(g_a);
+    Monty25519 g_bia = g_bi * mK;
 
-    std::cout << "sender i: " << i << " " << toBlock(g_ab) << " "
-              << toBlock(g_ab + sizeof(block)) << std::endl;
-    // memcpy(val[i].data(), &g_ab, sizeof(block));
-    // memcpy(val[i].data() + sizeof(block), &g_ab + sizeof(block),
-    // sizeof(block));
-    // hash.Reset();
-    // hash.Update(g_ab);
-    // block hh;
-    // hash.Final(hh);
-    // std::cout <<"i: "<<i<<" "<< hh << "\n";
-    //  hash.Final(*TyIter);
-    *TyIter = toBlock(g_ab);
+    hash.Reset();
+    hash.Update(g_bia);
+    block hh;
+    hash.Final(hh);
+    *TyIter = hh;
     memcpy(&*TvIter, &*rIter, keyByteLength);
     TvIter += keyByteLength;
     if (values.size()) {
@@ -129,48 +122,23 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
       } else
         throw RTE_LOC;
       TvIter += values.cols();
-    }  // *TyIter=val[i].data();
-    // hash.Update(val[i].data());
+    }
     ++TyIter;
     rIter += keyByteLength;
-    // allpx[i][0] = toBlock(g_ab);
-    // allpx[i][1] = toBlock(g_ab + sizeof(block));
   }
-  std::cout<<"Ty values:\n";
-  for(u64 i=0;i<senderSize;i++)
-    std::cout<<Ty[i]<<std::endl;
-  std::cout << "values cols: " << values.cols() << std::endl;
+
   Baxos paxos1;
   paxos1.init(senderSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
   Matrix<u8> pax2(paxos1.size(), keyByteLength + values.cols());
   paxos1.solve<u8>(Ty, Tv, pax2, &mPrng, numThreads);
-  std::cout << "pax2 size: " << paxos.size() << std::endl;
-  macoro::sync_wait(chl.send(paxos.size()));
+
+  macoro::sync_wait(chl.send(paxos1.size()));
   macoro::sync_wait(chl.send(keyByteLength + values.cols()));  // NOLINT
   macoro::sync_wait(chl.send(coproto::copy(pax2)));            // NOLINT
-#ifdef Debug
-  std::cout << "sender pax2\n";
-  for (u64 i = 0; i < size; i++) {
-    for (auto a : pax2[i]) {
-      std::cout << (int)a << " ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << "sender val\n";
-  for (u64 i = 0; i < Tv.rows(); i++) {
-    for (auto a : Tv[i]) {
-      std::cout << (int)a << " ";
-    }
-    std::cout << "\n";
-  }
-#endif
-  // std::vector<block>::iterator TyIter;
-  // Matrix<block>::iterator TvIter;
-  // for (u64 i = 0; i < senderSize; i++) {
-  // }
 
   std::unique_ptr<Gmw> cmp = std::make_unique<Gmw>();
   BetaCircuit cir;
+
   cir = isZeroCircuit(keyBitLength);
   cmp->init(r.rows(), cir, numThreads, 1, mPrng.get());
   cmp->setInput(0, r);
@@ -182,6 +150,7 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
     std::copy(ss.begin(), ss.begin() + s.mFlagBits.sizeBytes(),
               s.mFlagBits.data());
   }
+  setTimePoint("cpsi:sender end");
 }
 
 }  // namespace volePSI

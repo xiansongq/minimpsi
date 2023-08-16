@@ -1,20 +1,20 @@
 #pragma once
 
-#include "volePSI/Defines.h"
-#include "volePSI/config.h"
-#include "sodium.h"
 #include "coproto/Socket/AsioSocket.h"
-
-
 #include "cryptoTools/Common/BitVector.h"
 #include "cryptoTools/Common/CuckooIndex.h"
 #include "cryptoTools/Common/Timer.h"
 #include "cryptoTools/Crypto/PRNG.h"
+#include "cryptoTools/Crypto/SodiumCurve.h"
 #include "cryptoTools/Network/Channel.h"
+#include "sodium.h"
+#include "volePSI/Defines.h"
 #include "volePSI/GMW/Gmw.h"
 #include "volePSI/RsOpprf.h"
 #include "volePSI/SimpleIndex.h"
-
+#include "volePSI/config.h"
+using osuCrypto::Sodium::Monty25519;
+using osuCrypto::Sodium::Scalar25519;
 namespace volePSI {
 class cPsiSender : public oc::TimerAdapter {
  public:
