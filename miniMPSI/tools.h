@@ -6,7 +6,6 @@
 
 #include "cryptoTools/Common/block.h"
 #include "cryptoTools/Crypto/RCurve.h"
-#include "miniMPSI/PsiDefines.h"
 #include "relic/relic.h"
 #include "relic/relic_core.h"
 #include "sodium.h"
@@ -50,7 +49,3 @@ std::vector<block> Ristretto225_to_block(const unsigned char *point);
 unsigned char *Block_to_Ristretto225(const block &a, const block &b);
 /* Ristretto225 to string  */
 std::string Ristretto225_to_string(const block &a, const block &b);
-/* ropo_fe25519 to 3 block */
-void ropo_fe25519_to_block(ropo_fe25519 &fe,std::vector<block> &ans);
-/* 3 block to ropo_fe25519 */
-void block_to_ropo_fe25519(std::vector<block>, ropo_fe25519 &fe);

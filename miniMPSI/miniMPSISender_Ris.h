@@ -37,8 +37,7 @@ class miniMPSISender_Ris : public oc::TimerAdapter {
 
   void send(std::vector<PRNG> &mseed, Socket &chl, u64 numThreads);
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,
-            u64 bitSize, std::vector<block> inputs, bool malicious,
-            u64 numThreads);
+            std::vector<block> inputs, bool malicious, u64 numThreads);
   void sendMonty(std::vector<PRNG> &mseed, Socket &chl, u64 numThreads);
 };
 

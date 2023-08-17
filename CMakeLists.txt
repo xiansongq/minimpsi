@@ -19,7 +19,9 @@ add_subdirectory(volePSI)
 #build miniMPSI
 add_subdirectory(miniMPSI)
 
+#build cPSI
 add_subdirectory(cPSI)
+
 # build the tests.
 #add_subdirectory(tests)
 

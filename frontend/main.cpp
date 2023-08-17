@@ -3,13 +3,9 @@
 #include <cryptoTools/Common/CLP.h>
 #include <cryptoTools/Common/Timer.h>
 #include <cryptoTools/Common/block.h>
-
-#include <iostream>
-// #include <stdarg.h>
-#include <cryptoTools/Common/CLP.h>
-#include <cryptoTools/Common/Timer.h>
 #include <macoro/sync_wait.h>
 
+#include <iostream>
 #include <ostream>
 #include <thread>  // NOLINT
 #include <vector>
@@ -23,10 +19,7 @@
 #include "cryptoTools/Network/Channel.h"
 #include "cryptoTools/Network/Endpoint.h"
 #include "cryptoTools/Network/IOService.h"
-#include "frontend/messagePassingExample.h"
-#include "frontend/networkSocketExample.h"
 #include "frontend/perf.h"
-#include "miniMPSI/PsiDefines.h"
 #include "miniMPSI/miniMPSIReceiver_Ris.h"
 #include "miniMPSI/miniMPSISender_Ris.h"
 #include "miniMPSI/tools.h"
@@ -35,6 +28,7 @@
 #include "tests/UnitTests.h"
 #include "volePSI/Paxos.h"
 #include "volePSI/RsCpsi.h"
+#include "volePSI/RsPsi.h"
 #include "volePSI/fileBased.h"
 using namespace osuCrypto;  // NOLINT
 using namespace volePSI;    // NOLINT
@@ -90,11 +84,10 @@ void printInfo() {
 
 void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
            bool malicious, u64 flag) {
-  // Initialize calculation of security parameters and statistical security
+  // Initialize computation of security parameters and statistical security
   // parameters
   u64 SecParam = 128;
   u64 StaParam = 40;
-  u64 bitSize = 128;
   u64 leaderParter = nParties - 1;
   std::mutex mtx;
 
@@ -104,28 +97,19 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   }
   u64 expectedIntersection = setSize / 2;
   std::vector<oc::Socket> chls(nParties);
-  // std::vector<std::vector<Socket>> chls(nParties);
   std::vector<std::thread> threads(nParties);
   for (u64 idx = 0; idx < threads.size(); idx++) {
     threads[idx] = std::thread([&, idx]() {
       if (idx < myIdx) {
         u32 port = 1200 + idx * 100 + myIdx;
         std::string ip = "localhost:" + std::to_string(port);
-        // std::cout << "ip: " << ip << std::endl;
-        // chls[idx].resize(num_Threads);
-        // for (u64 i = 0; i < num_Threads; i++)
-        //   chls[idx][i] = coproto::asioConnect(ip, 0);
         chls[idx] = coproto::asioConnect(ip, 0);
       } else if (idx > myIdx) {
         u32 port =
             1200 + myIdx * 100 + idx;  // get the same port; i=2 & pIdx=1
                                        // =>port=102 chls[i].resize(numThreads);
         std::string ip = "localhost:" + std::to_string(port);
-        // std::cout << "ip: " << ip << std::endl;
         chls[idx] = coproto::asioConnect(ip, 1);
-        // chls[idx].resize(num_Threads);
-        // for (u64 i = 0; i < num_Threads; i++)
-        //   chls[idx][i] = coproto::asioConnect(ip, 0);
       }
     });
   }
@@ -169,7 +153,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   miniMPSISender_Ris sender;
 
   if (myIdx != leaderParter) {
-    sender.init(128, 40, nParties, myIdx, setSize, bitSize, inputs, malicious,
+    sender.init(128, 40, nParties, myIdx, setSize, inputs, malicious,
                 num_Threads);
     Timer timer;
     sender.setTimer(timer);
@@ -181,13 +165,9 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     std::vector<std::thread> pThrds(nParties - 1);
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
       pThrds[pIdx] = std::thread([&, pIdx]() {
-        receiver[pIdx].init(128, 40, nParties, myIdx, setSize, bitSize, inputs,
+        receiver[pIdx].init(128, 40, nParties, myIdx, setSize, inputs,
                             malicious, num_Threads);
-        // if(receiver[pIdx].mTimer)
-        //     {
-        // Timer timer;
         receiver[pIdx].setTimer(timers[pIdx]);
-        // }
       });
     }
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
@@ -257,22 +237,22 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       return;
     }
     u64 len = 0;
-    for (auto i = 0; i < expectedIntersection; i++) {
+    for (u64 i = 0; i < expectedIntersection; i++) {
       if (inputs[i] == outputs[i]) len++;
     }
     std::cout << "instersection size is " << outputs.size() << std::endl;
     std::cout << "intersection success rate " << std::fixed
               << std::setprecision(2)
               << static_cast<double>(len) / expectedIntersection * 100 << "%"
+              << std::endl
               << std::endl;
-    std::cout << std::endl;
   }
 }
 
 void cpsi(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 10);
   ValueShareType type =
-      (cmd.getOr("st", 1) == 1) ? ValueShareType::Xor : ValueShareType::add32;
+      (cmd.get<u64>("st") == 1) ? ValueShareType::Xor : ValueShareType::add32;
   u64 numThreads = cmd.getOr("nt", 1);
   printParamInfo(2, setSize, numThreads, 128, 40, 0);
   std::vector<block> recvSet(setSize);
@@ -327,7 +307,7 @@ void cpsi(const oc::CLP& cmd) {
         auto rv = *(block*)&rShare.mValues(k, 0);
         auto sv = *(block*)&sShare.mValues(k, 0);
         auto act = (rv ^ sv);
-        std::cout << recvSet[i] << " " << rv << " " << sv << "\n";
+        // std::cout << recvSet[i] << " " << rv << " " << sv << "\n";
         if (recvSet[i] != act) {
           if (!failed)
             std::cout << i << " ext " << recvSet[i] << ", act " << act << " = "
@@ -374,7 +354,6 @@ void volepsi(const oc::CLP& cmd) {
     recvSet[i] = prng1.get<block>();
     sendSet[i] = prng1.get<block>();
   }
-
   RsPsiReceiver recver;
   RsPsiSender sender;
   Timer timer1;
@@ -406,7 +385,6 @@ void mycPSI(const oc::CLP& cmd) {
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
-  PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
   PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
   u64 expeIntersection = setSize / 2;
   for (u64 i = 0; i < expeIntersection; i++) {
@@ -426,28 +404,31 @@ void mycPSI(const oc::CLP& cmd) {
   cPsiReceiver::Sharing rShare;
   cPsiSender sender;
   cPsiSender::Sharing sShare;
+  Timer timer;
+  receive.setTimer(timer);
+  Timer timer1;
+  sender.setTimer(timer1);
   for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
     pThrds[pIdx] = std::thread([&, pIdx]() {
       if (pIdx == 0) {
         receive.init(setSize, setSize, sizeof(block), 40, numThreads,
                      toBlock(1, 1), receive.ValueShareType::Xor);
-        Timer timer;
-        receive.setTimer(timer);
+
         (receive.receive(recvSet, rShare, sockets[0]));
-        std::cout << receive.getTimer() << std::endl;
       } else {
         sender.init(setSize, setSize, sizeof(block), 40, numThreads,
                     toBlock(1, 1), sender.ValueShareType::Xor);
-        Timer timer;
-        sender.setTimer(timer);
+
         (sender.send(sendSet, senderValues, sShare, sockets[1]));
-        std::cout << sender.getTimer() << std::endl;
       }
     });
   }
   for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
     pThrds[pIdx].join();
   }
+
+  std::cout << sender.getTimer() << std::endl;
+  std::cout << receive.getTimer() << std::endl;
   bool failed = false;
   std::vector<u64> intersection;
   for (u64 i = 0; i < recvSet.size(); ++i) {
@@ -459,7 +440,7 @@ void mycPSI(const oc::CLP& cmd) {
         auto rv = *(block*)&rShare.mValues(k, 0);
         auto sv = *(block*)&sShare.mValues(k, 0);
         auto act = (rv ^ sv);
-        std::cout << recvSet[i] << " " << rv << " " << sv << "\n";
+        // std::cout << recvSet[i] << " " << rv << " " << sv << "\n";
         if (recvSet[i] != act) {
           if (!failed)
             std::cout << i << " ext " << recvSet[i] << ", act " << act << " = "
@@ -479,6 +460,7 @@ void mycPSI(const oc::CLP& cmd) {
       }
     }
   }
+  std::cout << "intersection  size: " << intersection.size() << std::endl;
 }
 
 int main(int argc, char** argv) {

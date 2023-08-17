@@ -17,7 +17,6 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "macoro/sync_wait.h"
 #include "macoro/thread_pool.h"
-#include "miniMPSI/PsiDefines.h"
 #include "miniMPSI/tools.h"
 #include "volePSI/Defines.h"
 #include "volePSI/RsCpsi.h"
@@ -250,7 +249,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
   return ans;
 }
 void miniMPSIReceiver_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
-                                u64 myIdx, u64 setSize, u64 bitSize,
+                                u64 myIdx, u64 setSize,
                                 std::vector<block> inputs,  // NOLINT
                                 bool malicious, u64 numThreads) {
   this->secParam = secParam;
@@ -258,7 +257,6 @@ void miniMPSIReceiver_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
   this->nParties = nParties;
   this->myIdx = myIdx;
   this->setSize = setSize;
-  this->bitSize = bitSize;
   this->inputs = inputs;
   this->malicious = malicious;
   this->numThreads = numThreads;

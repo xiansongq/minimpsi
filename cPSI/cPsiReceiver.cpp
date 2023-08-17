@@ -1,3 +1,5 @@
+// Copyright 2023 xiansongq.
+
 #include "cPsiReceiver.h"
 
 #include <cryptoTools/Common/block.h>
@@ -69,7 +71,6 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   Matrix<block> allkey(receiverSize, 2);
   for (u64 i = 0; i < receiverSize; i++) {
     Monty25519 g_ab = mG_a * allSeeds[i];
-
     hash.Reset();
     hash.Update(g_ab);
     block hh;

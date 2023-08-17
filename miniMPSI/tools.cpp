@@ -194,22 +194,3 @@ std::string Ristretto225_to_string(const block &a, const block &b) {
 
   return result;
 }
-
-void ropo_fe25519_to_block(ropo_fe25519 &fe, std::vector<block> &ans) {
-  assert(ans.size() == 3);
-  memcpy(&ans[0], fe, sizeof(block));
-  memcpy(&ans[1], reinterpret_cast<uint8_t *>(fe) + sizeof(block),
-         sizeof(block));
-
-  memcpy(&ans[2], reinterpret_cast<uint8_t *>(fe) + 2 * sizeof(block),
-         3 * sizeof(block) - sizeof(fe));
-}
-void block_to_ropo_fe25519(std::vector<block> ans, ropo_fe25519 &fe) {
-  assert(ans.size() == 3);
-  memcpy(fe, &ans[0], sizeof(block));
-  memcpy(reinterpret_cast<uint8_t *>(fe) + sizeof(block), &ans[1],
-         sizeof(block));
-
-  memcpy(reinterpret_cast<uint8_t *>(fe) + 2 * sizeof(block), &ans[2],
-         3 * sizeof(block) - sizeof(ropo_fe25519));
-}

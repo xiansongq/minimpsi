@@ -1,3 +1,5 @@
+// Copyright 2023 xiansongq.
+
 #include "cPsiSender.h"
 
 #include <cryptoTools/Circuit/BetaCircuit.h>
