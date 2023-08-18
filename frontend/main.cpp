@@ -282,10 +282,10 @@ void cpsi(const oc::CLP& cmd) {
   Timer timer2;
 
   recver.setTimer(timer1);
-  recver.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads);
+  recver.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
   sender.setTimer(timer2);
 
-  sender.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads);
+  sender.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
 
   RsCpsiReceiver::Sharing rShare;
   RsCpsiSender::Sharing sShare;
@@ -381,7 +381,8 @@ void volepsi(const oc::CLP& cmd) {
 void mycPSI(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 4);
   u64 numThreads = cmd.getOr("nt", 1);
-  volePSI::ValueShareType type = ValueShareType::Xor;
+  valueShareType type = 
+        (cmd.get<u64>("st") == 1) ? valueShareType::Xor : valueShareType::add32;
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
@@ -412,12 +413,12 @@ void mycPSI(const oc::CLP& cmd) {
     pThrds[pIdx] = std::thread([&, pIdx]() {
       if (pIdx == 0) {
         receive.init(setSize, setSize, sizeof(block), 40, numThreads,
-                     toBlock(1, 1), receive.ValueShareType::Xor);
+                     toBlock(1, 1), type);
 
         (receive.receive(recvSet, rShare, sockets[0]));
       } else {
         sender.init(setSize, setSize, sizeof(block), 40, numThreads,
-                    toBlock(1, 1), sender.ValueShareType::Xor);
+                    toBlock(1, 1), type);
 
         (sender.send(sendSet, senderValues, sShare, sockets[1]));
       }
@@ -436,7 +437,7 @@ void mycPSI(const oc::CLP& cmd) {
     if (rShare.mFlagBits[k] ^ sShare.mFlagBits[k]) {
       intersection.push_back(i);
 
-      if (type == ValueShareType::Xor) {
+      if (type == valueShareType::Xor) {
         auto rv = *(block*)&rShare.mValues(k, 0);
         auto sv = *(block*)&sShare.mValues(k, 0);
         auto act = (rv ^ sv);

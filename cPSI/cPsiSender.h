@@ -10,6 +10,7 @@
 #include "cryptoTools/Network/Channel.h"
 #include "sodium.h"
 #include "volePSI/Defines.h"
+#include "shareType.h"
 #include "volePSI/GMW/Gmw.h"
 #include "volePSI/RsOpprf.h"
 #include "volePSI/SimpleIndex.h"
@@ -19,13 +20,12 @@ using osuCrypto::Sodium::Scalar25519;
 namespace volePSI {
 class cPsiSender : public oc::TimerAdapter {
  public:
-  enum ValueShareType { Xor, add32 };
   u64 senderSize, receiverSize;
   u64 mValueByteLength = 0;
   u64 mSsp = 0;
   u64 numThreads = 0;
   PRNG mPrng;
-  ValueShareType mType = ValueShareType::Xor;
+  valueShareType mType = valueShareType::Xor;
   struct Sharing {
     // The sender's share of the bit vector indicating that
     // the i'th row is a real row (1) or a row (0).
@@ -41,7 +41,7 @@ class cPsiSender : public oc::TimerAdapter {
     std::vector<std::array<u64, 3>> mMapping;
   };
   void init(u64 senderSize, u64 receiverSize, u64 mValueByteLength, u64 mSSp,
-            u64 numThreads, block seed, ValueShareType mType);
+            u64 numThreads, block seed, valueShareType mType);
   void send(span<block> Y, oc::MatrixView<u8> values, Sharing& s, Socket& chl);
 };
 

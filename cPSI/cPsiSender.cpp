@@ -19,7 +19,7 @@ namespace volePSI {
 
 void cPsiSender::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
                       u64 mSsp, u64 numThreads, block seed,
-                      ValueShareType mType) {
+                      valueShareType mType) {
   this->senderSize = senderSize;
   this->receiverSize = receiverSize;
   this->mValueByteLength = mValueByteLength;
@@ -111,11 +111,11 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
     if (values.size()) {
       memcpy(&*TvIter, &values(i, 0), values.cols());
 
-      if (mType == ValueShareType::Xor) {
+      if (mType == valueShareType::Xor) {
         for (u64 k = 0; k < values.cols(); ++k) {
           TvIter[k] ^= s.mValues(i, k);
         }
-      } else if (mType == ValueShareType::add32) {
+      } else if (mType == valueShareType::add32) {
         assert(values.cols() % sizeof(u32) == 0);
         auto ss = values.cols() / sizeof(u32);
         auto tv = (u32*)TvIter;

@@ -15,7 +15,7 @@ using namespace osuCrypto;
 namespace volePSI {
 void cPsiReceiver::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
                         u64 mSsp, u64 numThreads, block seed,
-                        ValueShareType mType) {
+                        valueShareType mType) {
   this->senderSize = senderSize;
   this->receiverSize = receiverSize;
   this->mValueByteLength = mValueByteLength;
