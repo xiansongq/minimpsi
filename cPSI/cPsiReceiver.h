@@ -14,6 +14,7 @@
 #include "volePSI/RsOpprf.h"
 #include "volePSI/SimpleIndex.h"
 #include "volePSI/config.h"
+#include "volePSI/RsOpprf.h"
 using osuCrypto::Sodium::Monty25519;
 using osuCrypto::Sodium::Scalar25519;
 namespace volePSI {

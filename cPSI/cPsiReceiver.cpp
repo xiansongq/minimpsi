@@ -7,9 +7,11 @@
 #include <macoro/sync_wait.h>
 
 #include <cstddef>
+#include <cstring>
 
 #include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
+#include "volePSI/RsOpprf.h"
 using namespace osuCrypto;
 // #define Debug
 namespace volePSI {
@@ -71,27 +73,31 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   Matrix<block> allkey(receiverSize, 2);
   for (u64 i = 0; i < receiverSize; i++) {
     Monty25519 g_ab = mG_a * allSeeds[i];
-    hash.Reset();
-    hash.Update(g_ab);
-    block hh;
-    hash.Final(hh);
-    valx[i] = hh;
+    // hash.Reset();
+    // hash.Update(g_ab);
+    // block hh;
+    // hash.Final(hh);
+    // valx[i] = hh;
+    memcpy(&valx[i],&g_ab,sizeof(block));
     ret.mMapping[i] = i;
   }
-
-  u64 keyBitLength = mSsp + oc::log2ceil(senderSize);
+  std::cout<<"receiversize = "<<receiverSize<<std::endl;
+  std::cout<<"valxsize = "<<valx.size()<<std::endl;
+  u64 keyBitLength = mSsp + oc::log2ceil(valx.size());
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
-
+  // Matrix<u8> r;
+  // r.resize(receiverSize, keyByteLength + mValueByteLength, oc::AllocType::Uninitialized);
+  // auto opprf=std::make_unique<RsOpprfReceiver>() ;
+  // macoro::sync_wait(opprf->receive(senderSize, valx, r, mPrng, numThreads, chl)) ;
+  
   Baxos paxos1;
   paxos1.init(receiverSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
-
   size_t size, cols;
   macoro::sync_wait(chl.recv(size));
-  macoro::sync_wait(chl.recv(cols));
 
-  Matrix<u8> pax2(size, cols);
+  Matrix<u8> pax2(size, keyByteLength + mValueByteLength);
   macoro::sync_wait(chl.recv(pax2));  // NOLINT
-  Matrix<u8> r(receiverSize, cols);
+  Matrix<u8> r(receiverSize, keyByteLength + mValueByteLength);
   paxos1.decode<u8>(valx, r, pax2, numThreads);
 
 #ifdef Debug
@@ -110,6 +116,7 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
     std::cout << "\n";
   }
 #endif
+
 
   std::unique_ptr<Gmw> cmp = std::make_unique<Gmw>();
   BetaCircuit cir;
@@ -136,6 +143,7 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
     }
   }
   setTimePoint("cpsi:receiver end");
+
 }
 
 }  // namespace volePSI

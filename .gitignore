@@ -6,7 +6,10 @@ tests/cmakeTests/
 tests/CMakeFiles/
 CMakeSettings.json
 frontend/CMakeFiles/
-frontend/CMakeFiles/
+frontend/cmake_install.cmake
+cmake_install.cmake
+Makefile
+compile_commands.json
 .clangd/
 CMakeFiles/
 volePSI/CMakeFiles
@@ -23,6 +26,10 @@ volePSIConfig.cmake
 volePSIConfigVersion.cmake
 volePSITargets.cmake
 .cmake/
+miniMPSI/cmake_install.cmake
+miniMPSI/Makefile
+cPSI/Makefile
+cPSI/cmake_install.cmake
 # .clang-format
 # .clang-tidy
 ~/

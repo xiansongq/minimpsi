@@ -8,6 +8,7 @@
 #include <macoro/sync_wait.h>
 #include <sodium/crypto_core_ristretto255.h>
 
+#include <cstring>
 #include <memory>
 
 #include "miniMPSI/tools.h"
@@ -55,7 +56,7 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   macoro::sync_wait(chl.recv(size));
   Matrix<block> pax(size, 2);
 
-  macoro::sync_wait(chl.recv(pax));  // NOLINT
+  macoro::sync_wait(chl.recv(pax));  
   Matrix<block> deval(receiverSize, 2);
   paxos.decode<block>(Y, deval, pax, numThreads);
 
@@ -69,8 +70,6 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
 
   u64 keyBitLength = mSsp + oc::log2ceil(receiverSize);
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
-  Matrix<block> allpx(receiverSize, 2);
-  Matrix<u8> val(receiverSize, 2 * sizeof(block));
   Matrix<u8> Tv;
   std::vector<block> Ty;
 
@@ -101,10 +100,11 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
     g_bi.fromBytes(g_a);
     Monty25519 g_bia = g_bi * mK;
 
-    hash.Reset();
-    hash.Update(g_bia);
+    // hash.Reset();
+    // hash.Update(g_bia);
     block hh;
-    hash.Final(hh);
+    // hash.Final(hh);
+    memcpy(&hh,&g_bia,sizeof(block));
     *TyIter = hh;
     memcpy(&*TvIter, &*rIter, keyByteLength);
     TvIter += keyByteLength;
@@ -129,18 +129,19 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
     rIter += keyByteLength;
   }
 
+
+  // auto opprf=std::make_unique<RsOpprfSender>() ;
+  // macoro::sync_wait ( opprf->send(receiverSize,Ty,Tv,mPrng,numThreads,chl));
   Baxos paxos1;
   paxos1.init(senderSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
   Matrix<u8> pax2(paxos1.size(), keyByteLength + values.cols());
   paxos1.solve<u8>(Ty, Tv, pax2, &mPrng, numThreads);
 
   macoro::sync_wait(chl.send(paxos1.size()));
-  macoro::sync_wait(chl.send(keyByteLength + values.cols()));  // NOLINT
   macoro::sync_wait(chl.send(coproto::copy(pax2)));            // NOLINT
 
   std::unique_ptr<Gmw> cmp = std::make_unique<Gmw>();
   BetaCircuit cir;
-
   cir = isZeroCircuit(keyBitLength);
   cmp->init(r.rows(), cir, numThreads, 1, mPrng.get());
   cmp->setInput(0, r);

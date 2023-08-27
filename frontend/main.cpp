@@ -96,7 +96,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
                    malicious);
   }
   u64 expectedIntersection = setSize / 2;
-  std::vector<oc::Socket> chls(nParties);
+  std::vector<Socket> chls(nParties);
   std::vector<std::thread> threads(nParties);
   for (u64 idx = 0; idx < threads.size(); idx++) {
     threads[idx] = std::thread([&, idx]() {
@@ -179,6 +179,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   if (myIdx != leaderParter) {
     sender.sendMonty(mPrngs, chls[leaderParter], num_Threads);
     std::cout << sender.getTimer() << std::endl;
+    std::cout<<"sender communication overhead: "<<static_cast<double>(sender.totalDataSize)/(1024*1024)<<"MB\n"<<std::endl;
   } else {
     std::vector<std::thread> pThrds(nParties - 1);
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
@@ -240,6 +241,11 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     for (u64 i = 0; i < expectedIntersection; i++) {
       if (inputs[i] == outputs[i]) len++;
     }
+    u64 total=0;
+    for(u64 i=0;i<receiver.size();i++){
+      total += receiver[i].totalDataSize;
+    }
+    std::cout<<"communication overhead: "<<static_cast<double>(total)/(1024*1024)<<"MB"<<std::endl;
     std::cout << "instersection size is " << outputs.size() << std::endl;
     std::cout << "intersection success rate " << std::fixed
               << std::setprecision(2)
