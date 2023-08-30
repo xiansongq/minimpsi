@@ -5,6 +5,7 @@
 #include <cryptoTools/Circuit/BetaCircuit.h>
 #include <cryptoTools/Common/block.h>
 #include <cryptoTools/Crypto/RandomOracle.h>
+#include <cryptoTools/Crypto/Rijndael256.h>
 #include <macoro/sync_wait.h>
 #include <sodium/crypto_core_ristretto255.h>
 
@@ -46,7 +47,7 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   prng.SetSeed(seed);
   Scalar25519 mK(prng);
 
-  Monty25519 mG_k = {Monty25519::wholeGroupGenerator * mK};
+  Monty25519 mG_k = Monty25519::wholeGroupGenerator * mK;
   // send g^a
   setTimePoint("cpsi:sender start");
   macoro::sync_wait(chl.send(mG_k));
@@ -68,7 +69,7 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   }
 #endif
 
-  u64 keyBitLength = mSsp + oc::log2ceil(receiverSize);
+  u64 keyBitLength = mSsp + oc::log2ceil(receiverSize* senderSize);
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
   Matrix<u8> Tv;
   std::vector<block> Ty;
@@ -91,23 +92,20 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
 
   oc::RandomOracle hash(sizeof(block));
   for (u64 i = 0; i < receiverSize; i++) {
-    auto* g_a = new unsigned char[crypto_scalarmult_BYTES];
-    mempcpy(g_a, &deval[i][0], sizeof(block));
-    mempcpy(g_a + sizeof(block), &deval[i][1], sizeof(block));
-    auto g_f = decKey.decBlock((Block256(g_a)));
-    g_a = g_f.data();
+    auto g_f = decKey.decBlock(Block256(deval[i][0],deval[i][1]));
     Monty25519 g_bi;
-    g_bi.fromBytes(g_a);
+    g_bi.fromBytes(g_f.data());
     Monty25519 g_bia = g_bi * mK;
 
     // hash.Reset();
     // hash.Update(g_bia);
-    block hh;
+    // block hh=toBlock((u8 *)&g_bia);
     // hash.Final(hh);
-    memcpy(&hh,&g_bia,sizeof(block));
-    *TyIter = hh;
+    // memcpy(&hh,&g_bia,sizeof(block));
+    Ty[i]=toBlock((u8 *)&g_bia);
     memcpy(&*TvIter, &*rIter, keyByteLength);
     TvIter += keyByteLength;
+
     if (values.size()) {
       memcpy(&*TvIter, &values(i, 0), values.cols());
 
@@ -125,18 +123,17 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
         throw RTE_LOC;
       TvIter += values.cols();
     }
-    ++TyIter;
     rIter += keyByteLength;
   }
 
 
   // auto opprf=std::make_unique<RsOpprfSender>() ;
   // macoro::sync_wait ( opprf->send(receiverSize,Ty,Tv,mPrng,numThreads,chl));
+  
   Baxos paxos1;
   paxos1.init(senderSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
   Matrix<u8> pax2(paxos1.size(), keyByteLength + values.cols());
   paxos1.solve<u8>(Ty, Tv, pax2, &mPrng, numThreads);
-
   macoro::sync_wait(chl.send(paxos1.size()));
   macoro::sync_wait(chl.send(coproto::copy(pax2)));            // NOLINT
 

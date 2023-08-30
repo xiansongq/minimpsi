@@ -70,7 +70,6 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
 
   std::vector<block> valx(receiverSize);
   oc::RandomOracle hash(sizeof(block));
-  Matrix<block> allkey(receiverSize, 2);
   for (u64 i = 0; i < receiverSize; i++) {
     Monty25519 g_ab = mG_a * allSeeds[i];
     // hash.Reset();
@@ -81,9 +80,7 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
     memcpy(&valx[i],&g_ab,sizeof(block));
     ret.mMapping[i] = i;
   }
-  std::cout<<"receiversize = "<<receiverSize<<std::endl;
-  std::cout<<"valxsize = "<<valx.size()<<std::endl;
-  u64 keyBitLength = mSsp + oc::log2ceil(valx.size());
+  u64 keyBitLength = mSsp + oc::log2ceil(receiverSize* senderSize);
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
   // Matrix<u8> r;
   // r.resize(receiverSize, keyByteLength + mValueByteLength, oc::AllocType::Uninitialized);
@@ -92,9 +89,8 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   
   Baxos paxos1;
   paxos1.init(receiverSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
-  size_t size, cols;
+  size_t size;
   macoro::sync_wait(chl.recv(size));
-
   Matrix<u8> pax2(size, keyByteLength + mValueByteLength);
   macoro::sync_wait(chl.recv(pax2));  // NOLINT
   Matrix<u8> r(receiverSize, keyByteLength + mValueByteLength);

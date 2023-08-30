@@ -43,7 +43,6 @@ class miniMPSIReceiver_Ris : public oc ::TimerAdapter {
   std::vector<unsigned char *> allSeeds;
   std::vector<Scalar25519> allSeed;
   std::vector<block> zeroValue;
-  u64 totalDataSize;
   
   unsigned char *randomAK = new unsigned char[crypto_core_ristretto255_BYTES];
 

@@ -247,15 +247,12 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl,
   Monty25519 mG_k = {Monty25519::wholeGroupGenerator * mK};
   // send g^a
   macoro::sync_wait(chl.send(mG_k));
-  totalDataSize+=mG_k.size;
   // receive parameters of OKVS result vector
   size_t size = 0;
   macoro::sync_wait(chl.recv(size));
-  totalDataSize+=sizeof(size);
   Matrix<block> pax(size, Len);
   Matrix<block> deval(setSize, Len);
   macoro::sync_wait(chl.recv((pax)));
-  totalDataSize+=(size*Len)*sizeof(block);
 #ifdef Debug
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " decode start");
 #endif
@@ -340,8 +337,6 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl,
 
   macoro::sync_wait(chl.send(paxos.size()));
   macoro::sync_wait(chl.send(coproto::copy(pax2)));
-  totalDataSize+=sizeof(size);
-  totalDataSize+=(size)*sizeof(block);
 
 #ifdef Debug
   PrintLine('-');

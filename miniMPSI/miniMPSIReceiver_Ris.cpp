@@ -28,7 +28,6 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
     std::vector<PRNG> &mseed, Socket &chl, u64 numThreads) {
   // define variables
 
-  u64 leaderParty = nParties - 1;
   PRNG prng;
   PRNG prng1;
   prng1.SetSeed(toBlock(myIdx, myIdx));
@@ -53,7 +52,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
   // if malicious mode is enabled
   if (malicious) {
     oc::RandomOracle hash(sizeof(block));
-    for (auto i = 0; i < setSize; i++) {
+    for (u64 i = 0; i < setSize; i++) {
       hash.Reset();
       hash.Update(inputs[i]);
       block hh;
@@ -146,7 +145,6 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
 
 std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
     std::vector<PRNG> &mseed, Socket &chl, u64 numThreads) {
-  u64 leaderParty = nParties - 1;
   PRNG prng;
   Matrix<block> vals(setSize, Len);
   prng.SetSeed(toBlock(myIdx, myIdx));
@@ -166,7 +164,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
   setTimePoint("miniMPSI::reciver start");
   if (malicious) {
     oc::RandomOracle hash(sizeof(block));
-    for (auto i = 0; i < setSize; i++) {
+    for (u64 i = 0; i < setSize; i++) {
       hash.Reset();
       hash.Update(inputs[i]);
       block hh;
@@ -192,15 +190,12 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
 
   Monty25519 mG_a;
   macoro::sync_wait(chl.recv(mG_a));
-  totalDataSize+=mG_a.size;
   //  OKVS encode for (inputs, g_(a_i))
   Matrix<block> pax(paxos.size(), Len);
   paxos.solve<block>(inputs, vals, pax, &prng, numThreads);
   // send parameters of OKVS encode results
   macoro::sync_wait(chl.send(paxos.size()));
   macoro::sync_wait(chl.send(coproto::copy(pax)));  // NOLINT
-  totalDataSize+=sizeof(paxos.size());
-  totalDataSize+=(pax.cols()*pax.rows())*sizeof(block);
 
   std::vector<block> allpx(setSize);
   size_t size = 0;
@@ -209,8 +204,6 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
   macoro::sync_wait(chl.recv(pax2));
   std::vector<block> val3(setSize);
   paxos.decode<block>(inputs, val3, pax2, numThreads);
-  totalDataSize+=sizeof(size);
-  totalDataSize+=(pax2.size())*sizeof(block);
 #ifdef Debug
 
   PrintLine('-');

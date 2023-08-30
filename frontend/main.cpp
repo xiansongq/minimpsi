@@ -5,6 +5,7 @@
 #include <cryptoTools/Common/block.h>
 #include <macoro/sync_wait.h>
 
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <thread>  // NOLINT
@@ -179,7 +180,14 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   if (myIdx != leaderParter) {
     sender.sendMonty(mPrngs, chls[leaderParter], num_Threads);
     std::cout << sender.getTimer() << std::endl;
-    std::cout<<"sender communication overhead: "<<static_cast<double>(sender.totalDataSize)/(1024*1024)<<"MB\n"<<std::endl;
+    double total=0;
+    for(u64 i=0;i<nParties;i++){
+      if(i!=myIdx) {
+        total+=chls[i].bytesSent();
+        total+=chls[i].bytesReceived();
+      }
+    }
+    std::cout<<"sender communication overhead: "<<(total)/(1024*1024)<<"MB\n"<<std::endl;
   } else {
     std::vector<std::thread> pThrds(nParties - 1);
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
@@ -241,11 +249,15 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     for (u64 i = 0; i < expectedIntersection; i++) {
       if (inputs[i] == outputs[i]) len++;
     }
-    u64 total=0;
-    for(u64 i=0;i<receiver.size();i++){
-      total += receiver[i].totalDataSize;
+
+    double total=0;
+    for(u64 i=0;i<nParties;i++){
+       if(myIdx!=i) {
+        total+=chls[i].bytesSent();
+        total+=chls[i].bytesReceived();
+       }
     }
-    std::cout<<"communication overhead: "<<static_cast<double>(total)/(1024*1024)<<"MB"<<std::endl;
+    std::cout<<"communication overhead: "<<(total)/(1024*1024)<<"MB"<<std::endl;
     std::cout << "instersection size is " << outputs.size() << std::endl;
     std::cout << "intersection success rate " << std::fixed
               << std::setprecision(2)
@@ -274,7 +286,8 @@ void cpsi(const oc::CLP& cmd) {
     recvSet[i] = prng1.get<block>();
     sendSet[i] = prng1.get<block>();
   }
-  auto sockets = coproto::LocalAsyncSocket::makePair();
+  auto sockets = coproto::AsioSocket::makePair();
+
 
   RsCpsiReceiver recver;
   RsCpsiSender sender;
@@ -286,10 +299,12 @@ void cpsi(const oc::CLP& cmd) {
   std::memcpy(senderValues[7].data(), recvSet[8].data(), sizeof(block));
   Timer timer1;
   Timer timer2;
+  Timer r;
 
   recver.setTimer(timer1);
-  recver.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
   sender.setTimer(timer2);
+  r.setTimePoint("");
+  recver.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
 
   sender.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
 
@@ -300,7 +315,7 @@ void cpsi(const oc::CLP& cmd) {
   auto p1 = sender.send(sendSet, senderValues, sShare, sockets[1]);
 
   eval(p0, p1);
-
+  r.setTimePoint("end");
   bool failed = false;
   std::vector<u64> intersection;
   for (u64 i = 0; i < recvSet.size(); ++i) {
@@ -336,7 +351,12 @@ void cpsi(const oc::CLP& cmd) {
 
   std::cout << sender.getTimer() << std::endl;
   std::cout << recver.getTimer() << std::endl;
-
+  std::cout<<r<<std::endl;
+  std::cout << "communication overhead: "
+            << static_cast<double>(sockets[0].bytesSent() + sockets[0].bytesReceived() +
+                sockets[1].bytesSent() + sockets[1].bytesReceived()) /
+                   (1024 * 1024)
+            << "MB" << std::endl;
   std::cout << "intersection  size: " << intersection.size() << std::endl;
 }
 
@@ -393,6 +413,7 @@ void mycPSI(const oc::CLP& cmd) {
   std::vector<block> sendSet(setSize);
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
   PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
+  printParamInfo(2, setSize, numThreads, 128, 40, 0);
   u64 expeIntersection = setSize / 2;
   for (u64 i = 0; i < expeIntersection; i++) {
     sendSet[i].set<u64>(0, i);
@@ -405,16 +426,17 @@ void mycPSI(const oc::CLP& cmd) {
   oc::Matrix<u8> senderValues(sendSet.size(), sizeof(block));
   std::memcpy(senderValues.data(), sendSet.data(),
               sendSet.size() * sizeof(block));
-  auto sockets = coproto::LocalAsyncSocket::makePair();
+  auto sockets = coproto::AsioSocket::makePair();
+  
   std::vector<std::thread> pThrds(2);
   cPsiReceiver receive;
   cPsiReceiver::Sharing rShare;
   cPsiSender sender;
   cPsiSender::Sharing sShare;
-  Timer timer;
+  Timer timer,timer1,r;
   receive.setTimer(timer);
-  Timer timer1;
   sender.setTimer(timer1);
+  r.setTimePoint("");
   for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
     pThrds[pIdx] = std::thread([&, pIdx]() {
       if (pIdx == 0) {
@@ -433,9 +455,11 @@ void mycPSI(const oc::CLP& cmd) {
   for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
     pThrds[pIdx].join();
   }
+  r.setTimePoint("end");
 
   std::cout << sender.getTimer() << std::endl;
   std::cout << receive.getTimer() << std::endl;
+  std::cout << r << std::endl;
   bool failed = false;
   std::vector<u64> intersection;
   for (u64 i = 0; i < recvSet.size(); ++i) {
@@ -467,6 +491,11 @@ void mycPSI(const oc::CLP& cmd) {
       }
     }
   }
+  std::cout << "communication overhead: "
+            <<static_cast<double>(sockets[0].bytesSent() + sockets[0].bytesReceived() +
+                sockets[1].bytesSent() + sockets[1].bytesReceived()) /
+                   (1024 * 1024)
+            << "MB" << std::endl;
   std::cout << "intersection  size: " << intersection.size() << std::endl;
 }
 
