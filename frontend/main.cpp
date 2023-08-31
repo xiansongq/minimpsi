@@ -179,6 +179,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   std::unordered_multiset<block> result;
   if (myIdx != leaderParter) {
     sender.sendMonty(mPrngs, chls[leaderParter], num_Threads);
+    if(myIdx==0){
     std::cout << sender.getTimer() << std::endl;
     double total=0;
     for(u64 i=0;i<nParties;i++){
@@ -188,6 +189,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       }
     }
     std::cout<<"sender communication overhead: "<<(total)/(1024*1024)<<"MB\n"<<std::endl;
+    }
   } else {
     std::vector<std::thread> pThrds(nParties - 1);
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
