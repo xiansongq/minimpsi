@@ -15,7 +15,6 @@ if(VOLE_PSI_NO_LTO)
 endif()
 
 
-
 if(MSVC)
     target_compile_options(frontend PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/std:c++${VOLE_PSI_STD_VER}>)
     #target_compile_options(libOTe PRIVATE -openmp:experimental)

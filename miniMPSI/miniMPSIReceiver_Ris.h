@@ -21,8 +21,8 @@
 #include "sodium.h"
 #include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
-using namespace osuCrypto;  // NOLINT
-using namespace volePSI;    // NOLINT
+// using namespace osuCrypto;  // NOLINT
+// using namespace volePSI;    // NOLINT
 using osuCrypto::Sodium::Monty25519;
 using osuCrypto::Sodium::Scalar25519;
 namespace volePSI {
@@ -46,11 +46,10 @@ class miniMPSIReceiver_Ris : public oc ::TimerAdapter {
   
   unsigned char *randomAK = new unsigned char[crypto_core_ristretto255_BYTES];
 
-  std::vector<std::vector<block>> receive(std::vector<PRNG> &mseed, Socket &chl,
-                                          u64 numThreads);
+  std::vector<std::vector<block>> receive(std::vector<PRNG> &mseed, Socket &chl);
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,
             std::vector<block> inputs, bool malicious, u64 numThreads);
   std::vector<std::vector<block>> receiveMonty(std::vector<PRNG> &mseed,
-                                               Socket &chl, u64 numThreads);
+                                               Socket &chl);
 };
 }  // namespace volePSI

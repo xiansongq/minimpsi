@@ -178,23 +178,25 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   std::vector<block> keys(setSize);
   std::unordered_multiset<block> result;
   if (myIdx != leaderParter) {
-    sender.sendMonty(mPrngs, chls[leaderParter], num_Threads);
-    if(myIdx==0){
-    std::cout << sender.getTimer() << std::endl;
-    double total=0;
-    for(u64 i=0;i<nParties;i++){
-      if(i!=myIdx) {
-        total+=chls[i].bytesSent();
-        total+=chls[i].bytesReceived();
+    sender.sendMonty(mPrngs, chls[leaderParter]);
+    if (myIdx == 0) {
+      std::cout << sender.getTimer() << std::endl;
+      double total = 0;
+      for (u64 i = 0; i < nParties; i++) {
+        if (i != myIdx) {
+          total += chls[i].bytesSent();
+          // total+=chls[i].bytesReceived();
+        }
       }
-    }
-    std::cout<<"sender communication overhead: "<<(total)/(1024*1024)<<"MB\n"<<std::endl;
+      std::cout << "sender communication overhead: " << (total) / (1024 * 1024)
+                << "MB\n"
+                << std::endl;
     }
   } else {
     std::vector<std::thread> pThrds(nParties - 1);
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
       pThrds[pIdx] = std::thread([&, pIdx]() {
-        auto ans = receiver[pIdx].receiveMonty(mPrngs, chls[pIdx], num_Threads);
+        auto ans = receiver[pIdx].receiveMonty(mPrngs, chls[pIdx]);
         if (nParties > 2) {
           for (u64 j = 0; j < setSize; j++) {
             allpx2[j] = allpx2[j] ^ ans[0][j];
@@ -252,14 +254,15 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       if (inputs[i] == outputs[i]) len++;
     }
 
-    double total=0;
-    for(u64 i=0;i<nParties;i++){
-       if(myIdx!=i) {
-        total+=chls[i].bytesSent();
-        total+=chls[i].bytesReceived();
-       }
+    double total = 0;
+    for (u64 i = 0; i < nParties; i++) {
+      if (myIdx != i) {
+        total += chls[i].bytesSent();
+        // total+=chls[i].bytesReceived();
+      }
     }
-    std::cout<<"communication overhead: "<<(total)/(1024*1024)<<"MB"<<std::endl;
+    std::cout << "communication overhead: " << (total) / (1024 * 1024) << "MB"
+              << std::endl;
     std::cout << "instersection size is " << outputs.size() << std::endl;
     std::cout << "intersection success rate " << std::fixed
               << std::setprecision(2)
@@ -290,7 +293,6 @@ void cpsi(const oc::CLP& cmd) {
   }
   auto sockets = coproto::AsioSocket::makePair();
 
-
   RsCpsiReceiver recver;
   RsCpsiSender sender;
 
@@ -306,9 +308,9 @@ void cpsi(const oc::CLP& cmd) {
   recver.setTimer(timer1);
   sender.setTimer(timer2);
   r.setTimePoint("");
-  recver.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
+  recver.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads, type);
 
-  sender.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads,type);
+  sender.init(setSize, setSize, byteLength, 40, prng0.get(), numThreads, type);
 
   RsCpsiReceiver::Sharing rShare;
   RsCpsiSender::Sharing sShare;
@@ -353,17 +355,19 @@ void cpsi(const oc::CLP& cmd) {
 
   std::cout << sender.getTimer() << std::endl;
   std::cout << recver.getTimer() << std::endl;
-  std::cout<<r<<std::endl;
+  std::cout << r << std::endl;
   std::cout << "communication overhead: "
-            << static_cast<double>(sockets[0].bytesSent() + sockets[0].bytesReceived() +
-                sockets[1].bytesSent() + sockets[1].bytesReceived()) /
+            << static_cast<double>(
+                   sockets[0].bytesSent() + sockets[0].bytesReceived() +
+                   sockets[1].bytesSent() + sockets[1].bytesReceived()) /
                    (1024 * 1024)
             << "MB" << std::endl;
   std::cout << "intersection  size: " << intersection.size() << std::endl;
 }
 
 void volepsi(const oc::CLP& cmd) {
-  auto sockets = coproto::LocalAsyncSocket::makePair();
+  auto sockets = coproto::AsioSocket::makePair();
+
   u64 setSize = 1 << cmd.getOr("m", 10);
   bool malicious = cmd.getOr("-malicious", 0) == 0 ? false : true;
   u64 numThreads = cmd.getOr("nt", 1);
@@ -387,6 +391,7 @@ void volepsi(const oc::CLP& cmd) {
   Timer timer1;
   Timer timer2;
 
+
   recver.setTimer(timer1);
   recver.init(sendSet.size(), recvSet.size(), 40, prng0.get(), malicious,
               numThreads, false);
@@ -402,6 +407,12 @@ void volepsi(const oc::CLP& cmd) {
 
   std::cout << recver.getTimer() << std::endl;
   std::cout << sender.getTimer() << std::endl;
+  double senderDataCost = sockets[1].bytesSent();
+  double receiverDataCost = sockets[0].bytesSent();
+  std::cout << "communication overhead: "
+            << (senderDataCost + receiverDataCost) / (1024 * 1024) << "MB"
+            << std::endl;
+
   std::cout << "intersection size: " << recver.mIntersection.size()
             << std::endl;
 }
@@ -409,8 +420,8 @@ void volepsi(const oc::CLP& cmd) {
 void mycPSI(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 4);
   u64 numThreads = cmd.getOr("nt", 1);
-  valueShareType type = 
-        (cmd.get<u64>("st") == 1) ? valueShareType::Xor : valueShareType::add32;
+  valueShareType type =
+      (cmd.get<u64>("st") == 1) ? valueShareType::Xor : valueShareType::add32;
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
@@ -429,13 +440,13 @@ void mycPSI(const oc::CLP& cmd) {
   std::memcpy(senderValues.data(), sendSet.data(),
               sendSet.size() * sizeof(block));
   auto sockets = coproto::AsioSocket::makePair();
-  
+
   std::vector<std::thread> pThrds(2);
   cPsiReceiver receive;
   cPsiReceiver::Sharing rShare;
   cPsiSender sender;
   cPsiSender::Sharing sShare;
-  Timer timer,timer1,r;
+  Timer timer, timer1, r;
   receive.setTimer(timer);
   sender.setTimer(timer1);
   r.setTimePoint("");
@@ -494,8 +505,9 @@ void mycPSI(const oc::CLP& cmd) {
     }
   }
   std::cout << "communication overhead: "
-            <<static_cast<double>(sockets[0].bytesSent() + sockets[0].bytesReceived() +
-                sockets[1].bytesSent() + sockets[1].bytesReceived()) /
+            << static_cast<double>(
+                   sockets[0].bytesSent() + sockets[0].bytesReceived() +
+                   sockets[1].bytesSent() + sockets[1].bytesReceived()) /
                    (1024 * 1024)
             << "MB" << std::endl;
   std::cout << "intersection  size: " << intersection.size() << std::endl;

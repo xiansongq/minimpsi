@@ -29,9 +29,8 @@
 namespace volePSI {
 
 void miniMPSISender_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
-                              u64 myIdx, u64 setSize,
-                              std::vector<block> inputs, bool malicious,
-                              u64 numThreads) {
+                              u64 myIdx, u64 setSize, std::vector<block> inputs,
+                              bool malicious, u64 numThreads) {
   this->secParam = secParam;
   this->stasecParam = stasecParam;
   this->nParties = nParties;
@@ -42,8 +41,7 @@ void miniMPSISender_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
   this->numThreads = numThreads;
 }
 
-void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl,
-                              u64 numThreads) {
+void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
   std::vector<block> zeroValue(nParties);
   u64 leaderParty = nParties - 1;
   PRNG prng;
@@ -197,8 +195,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl,
   macoro::sync_wait(chl.flush());
 }
 
-void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl,
-                                   u64 numThreads) {
+void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   std::vector<block> zeroValue(nParties);
   u64 leaderParty = nParties - 1;
   PRNG prng;
@@ -304,11 +301,6 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl,
       intercept
        */
       allkey[i] = toBlock((u8 *)&g_bia);
-      if (malicious) {
-        oc::RandomOracle hash(sizeof(block));
-        hash.Update(allkey[i]);
-        hash.Final(allkey[i]);
-      }
       for (u64 j = 0; j < nParties; j++) {
         allkey[i] = allkey[i] ^ zeroValue[j];
       }
@@ -328,7 +320,14 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl,
 #ifdef Debug
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " encode start");
 #endif
-
+  if (malicious) {
+    oc::RandomOracle hash(sizeof(block));
+    for (u64 i = 0; i < setSize; i++) {
+      hash.Reset();
+      hash.Update(inputs[i]);
+      hash.Final(inputs[i]);
+    }
+  }
   paxos.solve<block>(inputs, allkey, pax2, &prng, numThreads);
 
 #ifdef Debug

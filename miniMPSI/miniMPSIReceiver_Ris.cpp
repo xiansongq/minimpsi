@@ -2,6 +2,7 @@
 
 #include "miniMPSI/miniMPSIReceiver_Ris.h"
 
+#include <cryptoTools/Crypto/RandomOracle.h>
 #include <sodium/crypto_core_ed25519.h>
 #include <sodium/crypto_core_ristretto255.h>
 #include <sodium/crypto_scalarmult_ed25519.h>
@@ -25,7 +26,7 @@
 namespace volePSI {
 
 std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
-    std::vector<PRNG> &mseed, Socket &chl, u64 numThreads) {
+    std::vector<PRNG> &mseed, Socket &chl) {
   // define variables
 
   PRNG prng;
@@ -144,7 +145,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
 }
 
 std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
-    std::vector<PRNG> &mseed, Socket &chl, u64 numThreads) {
+    std::vector<PRNG> &mseed, Socket &chl) {
   PRNG prng;
   Matrix<block> vals(setSize, Len);
   prng.SetSeed(toBlock(myIdx, myIdx));
@@ -203,6 +204,14 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
   std::vector<block> pax2(size);
   macoro::sync_wait(chl.recv(pax2));
   std::vector<block> val3(setSize);
+  if(malicious){
+    oc::RandomOracle hash(sizeof(block));
+    for(u64 i=0;i<setSize;i++){
+      hash.Reset();
+      hash.Update(inputs[i]);
+      hash.Final(inputs[i]);
+    }
+  }
   paxos.decode<block>(inputs, val3, pax2, numThreads);
 #ifdef Debug
 
@@ -228,11 +237,6 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
       for (u64 i = startlen; i < endlen; ++i) {
         Monty25519 g_ab = mG_a * allSeed[i];
         allkey[i] = toBlock((u8 *)&g_ab);
-        if (malicious) {
-          oc::RandomOracle hash(sizeof(block));
-          hash.Update(allkey[i]);
-          hash.Final(allkey[i]);
-        }
       }
     });
   }

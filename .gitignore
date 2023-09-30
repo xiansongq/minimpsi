@@ -30,6 +30,8 @@ miniMPSI/cmake_install.cmake
 miniMPSI/Makefile
 cPSI/Makefile
 cPSI/cmake_install.cmake
+cPSI/libcPSI.a
+miniMPSI/libminiMPSI.a
 # .clang-format
 # .clang-tidy
 ~/
