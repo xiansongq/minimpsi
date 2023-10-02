@@ -58,7 +58,6 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
   };
   Block userKey = Block256(userKeyArr);
   Rijndael256Dec decKey(userKey);
-  // std::mutex mtx;
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
 
   // if malicious mode is enabled
@@ -125,6 +124,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
   }
   PrintLine('-');
 #endif
+
   auto compute = [&](u64 idx) {
     u64 datalen = setSize / thrds.size();
     u64 startlen = idx * datalen;
@@ -211,7 +211,6 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   };
   Block userKey = Block256(userKeyArr);
   Rijndael256Dec decKey(userKey);
-  // std::mutex mtx;
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
 
   // if malicious mode is enabled
@@ -250,6 +249,7 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   Matrix<block> pax(size, Len);
   Matrix<block> deval(setSize, Len);
   macoro::sync_wait(chl.recv((pax)));
+  
 #ifdef Debug
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " decode start");
 #endif

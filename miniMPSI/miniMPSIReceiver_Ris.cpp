@@ -84,6 +84,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
 #endif
 
   macoro::sync_wait(chl.recv(randomAK));
+
 #ifdef Debug
   PrintLine('-');
   std::cout << "receiver encode value\n";
@@ -141,7 +142,6 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
   ans.push_back(val3);
   ans.push_back(allkey);
   return ans;
-  // return val3;
 }
 
 std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
@@ -204,15 +204,16 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
   std::vector<block> pax2(size);
   macoro::sync_wait(chl.recv(pax2));
   std::vector<block> val3(setSize);
-  if(malicious){
+  if (malicious) {
     oc::RandomOracle hash(sizeof(block));
-    for(u64 i=0;i<setSize;i++){
+    for (u64 i = 0; i < setSize; i++) {
       hash.Reset();
       hash.Update(inputs[i]);
       hash.Final(inputs[i]);
     }
   }
   paxos.decode<block>(inputs, val3, pax2, numThreads);
+  
 #ifdef Debug
 
   PrintLine('-');

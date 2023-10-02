@@ -15,7 +15,7 @@
 #include "miniMPSI/tools.h"
 #include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
-using namespace osuCrypto;
+// using namespace osuCrypto;
 // #define Debug
 namespace volePSI {
 
@@ -34,20 +34,20 @@ void cPsiSender::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
 void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
                       Socket& chl) {
   // choise a random curver value
-  using Block = typename Rijndael256Enc::Block;
+  using Block = typename oc::Rijndael256Enc::Block;
   const std::uint8_t userKeyArr[] = {
       0x6e, 0x49, 0x0e, 0xe6, 0x2b, 0xa8, 0xf4, 0x0a, 0x95, 0x83, 0xff,
       0xa1, 0x59, 0xa5, 0x9d, 0x33, 0x1d, 0xa6, 0x15, 0xcd, 0x1e, 0x8c,
       0x75, 0xe1, 0xea, 0xe3, 0x35, 0xe4, 0x76, 0xed, 0xf1, 0xdf,
   };
-  Block userKey = Block256(userKeyArr);
-  Rijndael256Dec decKey(userKey);
+  Block userKey = oc::Block256(userKeyArr);
+  oc::Rijndael256Dec decKey(userKey);
   PRNG prng;
   block seed = oc::sysRandomSeed();
   prng.SetSeed(seed);
   Scalar25519 mK(prng);
-
   Monty25519 mG_k = Monty25519::wholeGroupGenerator * mK;
+
   // send g^a
   setTimePoint("cpsi:sender start");
   macoro::sync_wait(chl.send(mG_k));
@@ -61,13 +61,6 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   Matrix<block> deval(receiverSize, 2);
   paxos.decode<block>(Y, deval, pax, numThreads);
 
-#ifdef Debug
-  std::cout << "sender decode\n";
-  for (u64 i = 0; i < receiverSize; i++) {
-    std::cout << "decode i: " << i << " " << deval[i][0] << " " << deval[i][1]
-              << std::endl;
-  }
-#endif
 
   u64 keyBitLength = mSsp + oc::log2ceil(receiverSize* senderSize);
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
@@ -97,11 +90,6 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
     g_bi.fromBytes(g_f.data());
     Monty25519 g_bia = g_bi * mK;
 
-    // hash.Reset();
-    // hash.Update(g_bia);
-    // block hh=toBlock((u8 *)&g_bia);
-    // hash.Final(hh);
-    // memcpy(&hh,&g_bia,sizeof(block));
     Ty[i]=toBlock((u8 *)&g_bia);
     memcpy(&*TvIter, &*rIter, keyByteLength);
     TvIter += keyByteLength;
@@ -127,8 +115,7 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
   }
 
 
-  // auto opprf=std::make_unique<RsOpprfSender>() ;
-  // macoro::sync_wait ( opprf->send(receiverSize,Ty,Tv,mPrng,numThreads,chl));
+
   
   Baxos paxos1;
   paxos1.init(senderSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));

@@ -67,24 +67,28 @@ void printInfo() {
             << "      -n: number of parties.\n"
             << "      -m: input set size ( 2^m ).\n"
             << "      -mm: input set size ( mm ).\n"
-            << "      -p: the party ID (must be a continuous integer of 1-( "
-               "n-1 ) ) Local Multi-Terminal Time Input.\n"
+            << "      -p: the party ID (must be a continuous integer of 1-"
+               "n ) Local Multi-Terminal Time Input.\n"
             << "      -t: number of threads.\n"
             << "      -r: 0 is semihonest model, 1 is malicous model.\n"
             // << "      -u: Run unit test.\n"
-            << "-cpsi: Run the circuit psi.\n"
+            << "-cpsi: Run  RS21 circuit psi.\n"
             << "      -m <value>: the log2 size of the sets.\n"
             << "      -st: ValueShareType (1 xor,0 add32).\n"
-            << "      -nt: number of threads.\n"
+            << "      -t: number of threads.\n"
+            << "-mycpsi: Run our circuit psi.\n"
+            << "      -m <value>: the log2 size of the sets.\n"
+            << "      -st: ValueShareType (1 xor,0 add32).\n"
+            << "      -t: number of threads.\n"
             << "-volepsi: Run the volePSI.\n"
             << "      -m <value>: the log2 size of the sets.\n"
-            << "      -malicious: run with malicious security.\n"
-            << "      -nt: number of threads.\n"
+            << "      -r: 0 is semihonest model, 1 is malicous model.\n"
+            << "      -t: number of threads.\n"
             << oc::Color::Default;
 }
 
-void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
-           bool malicious, u64 flag) {
+void mpsi(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious,
+          u64 flag) {
   // Initialize computation of security parameters and statistical security
   // parameters
   u64 SecParam = 128;
@@ -96,6 +100,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     printParamInfo(nParties, setSize, num_Threads, SecParam, StaParam,
                    malicious);
   }
+
   u64 expectedIntersection = setSize / 2;
   std::vector<Socket> chls(nParties);
   std::vector<std::thread> threads(nParties);
@@ -163,6 +168,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     for (u64 i = 0; i < nParties; i++) {
       if (myIdx != i) zeroValue[i] = zeroValue[i] ^ mPrngs[i].get<block>();
     }
+
     std::vector<std::thread> pThrds(nParties - 1);
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
       pThrds[pIdx] = std::thread([&, pIdx]() {
@@ -177,6 +183,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
   std::vector<block> allpx2(setSize);
   std::vector<block> keys(setSize);
   std::unordered_multiset<block> result;
+
   if (myIdx != leaderParter) {
     sender.sendMonty(mPrngs, chls[leaderParter]);
     if (myIdx == 0) {
@@ -221,6 +228,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
         if (pIdx == pThrds.size() - 1) {
           endlen = setSize;
         }
+
         for (u64 i = startlen; i < endlen; ++i) {
           for (u64 j = 0; j < nParties; j++) {
             allpx2[i] = allpx2[i] ^ zeroValue[j];
@@ -242,6 +250,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
         outputs.push_back(inputs[i]);
       }
     }
+
     timers[0].setTimePoint("miniMPSI::receiver  end");
     std::cout << timers[0] << std::endl;
     // intersection success rate
@@ -249,6 +258,7 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
       std::cout << "excute PSI error" << std::endl;
       return;
     }
+
     u64 len = 0;
     for (u64 i = 0; i < expectedIntersection; i++) {
       if (inputs[i] == outputs[i]) len++;
@@ -258,7 +268,6 @@ void party(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads,
     for (u64 i = 0; i < nParties; i++) {
       if (myIdx != i) {
         total += chls[i].bytesSent();
-        // total+=chls[i].bytesReceived();
       }
     }
     std::cout << "communication overhead: " << (total) / (1024 * 1024) << "MB"
@@ -276,7 +285,7 @@ void cpsi(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 10);
   ValueShareType type =
       (cmd.get<u64>("st") == 1) ? ValueShareType::Xor : ValueShareType::add32;
-  u64 numThreads = cmd.getOr("nt", 1);
+  u64 numThreads = cmd.getOr("t", 1);
   printParamInfo(2, setSize, numThreads, 128, 40, 0);
   std::vector<block> recvSet(setSize);
   std::vector<block> sendSet(setSize);
@@ -332,13 +341,11 @@ void cpsi(const oc::CLP& cmd) {
         auto rv = *(block*)&rShare.mValues(k, 0);
         auto sv = *(block*)&sShare.mValues(k, 0);
         auto act = (rv ^ sv);
-        // std::cout << recvSet[i] << " " << rv << " " << sv << "\n";
         if (recvSet[i] != act) {
           if (!failed)
             std::cout << i << " ext " << recvSet[i] << ", act " << act << " = "
                       << rv << " " << sv << std::endl;
           failed = true;
-          // throw RTE_LOC;
         }
       } else {
         for (u64 j = 0; j < 4; ++j) {
@@ -369,8 +376,9 @@ void volepsi(const oc::CLP& cmd) {
   auto sockets = coproto::AsioSocket::makePair();
 
   u64 setSize = 1 << cmd.getOr("m", 10);
-  bool malicious = cmd.getOr("-malicious", 0) == 0 ? false : true;
-  u64 numThreads = cmd.getOr("nt", 1);
+  bool malicious = cmd.getOr("r", 0) == 0 ? false : true;
+  u64 numThreads = cmd.getOr("t", 1);
+
   printParamInfo(2, setSize, numThreads, 128, 40, malicious);
 
   std::vector<block> recvSet(setSize);
@@ -390,7 +398,6 @@ void volepsi(const oc::CLP& cmd) {
   RsPsiSender sender;
   Timer timer1;
   Timer timer2;
-
 
   recver.setTimer(timer1);
   recver.init(sendSet.size(), recvSet.size(), 40, prng0.get(), malicious,
@@ -419,7 +426,7 @@ void volepsi(const oc::CLP& cmd) {
 
 void mycPSI(const oc::CLP& cmd) {
   u64 setSize = 1 << cmd.getOr("m", 4);
-  u64 numThreads = cmd.getOr("nt", 1);
+  u64 numThreads = cmd.getOr("t", 1);
   valueShareType type =
       (cmd.get<u64>("st") == 1) ? valueShareType::Xor : valueShareType::add32;
   std::vector<block> recvSet(setSize);
@@ -551,7 +558,7 @@ int main(int argc, char** argv) {
         }
         if (strcmp(argv[10], "-r") == 0) {
           malicious = strcmp(argv[11], "1") == 0;
-          party(nParties, setSize, pIdx, numthreads, malicious, 1);
+          mpsi(nParties, setSize, pIdx, numthreads, malicious, 1);
         } else {
           printInfo();
         }
@@ -577,7 +584,7 @@ int main(int argc, char** argv) {
           std::vector<std::thread> pThrds(nParties);
           for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
             pThrds[pIdx] = std::thread([&, pIdx]() {
-              party(nParties, setSize, pIdx, numthreads, malicious, 0);
+              mpsi(nParties, setSize, pIdx, numthreads, malicious, 0);
             });
           }
           for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
@@ -587,22 +594,6 @@ int main(int argc, char** argv) {
           printInfo();
         }
         break;
-      // case 2:
-      //   if (argv[1][0] == '-' && argv[1][1] == 'u') {
-      //     nParties = 3;
-      //     setSize = 1 << 3;
-      //     numthreads = 4;
-      //     malicious = 0;
-      //     std::vector<std::thread> pThrds(nParties);
-      //     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) {
-      //       pThrds[pIdx] = std::thread([&, pIdx]() {
-      //         party(nParties, setSize, pIdx, numthreads, malicious, 0);
-      //       });
-      //     }
-      //     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx)
-      //     pThrds[pIdx].join();
-      //   }
-      //   break;
       default:
         printInfo();
         break;

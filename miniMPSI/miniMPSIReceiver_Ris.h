@@ -43,10 +43,11 @@ class miniMPSIReceiver_Ris : public oc ::TimerAdapter {
   std::vector<unsigned char *> allSeeds;
   std::vector<Scalar25519> allSeed;
   std::vector<block> zeroValue;
-  
+
   unsigned char *randomAK = new unsigned char[crypto_core_ristretto255_BYTES];
 
-  std::vector<std::vector<block>> receive(std::vector<PRNG> &mseed, Socket &chl);
+  std::vector<std::vector<block>> receive(std::vector<PRNG> &mseed,
+                                          Socket &chl);
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,
             std::vector<block> inputs, bool malicious, u64 numThreads);
   std::vector<std::vector<block>> receiveMonty(std::vector<PRNG> &mseed,

@@ -12,7 +12,7 @@
 #include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
 #include "volePSI/RsOpprf.h"
-using namespace osuCrypto;
+// using namespace osuCrypto;
 // #define Debug
 namespace volePSI {
 void cPsiReceiver::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
@@ -28,16 +28,18 @@ void cPsiReceiver::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
 }
 void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   // recv data
-  using Block = typename Rijndael256Enc::Block;
+  using Block = typename oc::Rijndael256Enc::Block;
   const std::uint8_t userKeyArr[] = {
       0x6e, 0x49, 0x0e, 0xe6, 0x2b, 0xa8, 0xf4, 0x0a, 0x95, 0x83, 0xff,
       0xa1, 0x59, 0xa5, 0x9d, 0x33, 0x1d, 0xa6, 0x15, 0xcd, 0x1e, 0x8c,
       0x75, 0xe1, 0xea, 0xe3, 0x35, 0xe4, 0x76, 0xed, 0xf1, 0xdf,
   };
-  Block userKey = Block256(userKeyArr);
-  Rijndael256Enc encKey(userKey);
+  Block userKey = oc::Block256(userKeyArr);
+  oc::Rijndael256Enc encKey(userKey);
+
   Monty25519 mG_a;
   std::vector<Scalar25519> allSeeds(receiverSize);
+
   Baxos paxos;
   PRNG prng;
   block seed = oc::sysRandomSeed();
@@ -48,20 +50,14 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   for (u64 i = 0; i < receiverSize; i++) {
     allSeeds[i].randomize(prng);
     Monty25519 point = {Monty25519::wholeGroupGenerator * allSeeds[i]};
-    auto permute_ctxt = encKey.encBlock(Block256((u8*)&point));
-    vals[i][0] = toBlock(permute_ctxt.data());
-    vals[i][1] = toBlock(permute_ctxt.data() + sizeof(block));
+    auto permute_ctxt = encKey.encBlock(oc::Block256((u8*)&point));
+    vals[i][0] = oc::toBlock(permute_ctxt.data());
+    vals[i][1] = oc::toBlock(permute_ctxt.data() + sizeof(block));
   }
+
   setTimePoint("cpsi:receiver start");
 
   macoro::sync_wait(chl.recv(mG_a));
-#ifdef Debug
-  std::cout << "receiver encode\n";
-  for (u64 i = 0; i < receiverSize; i++) {
-    std::cout << "encode i: " << i << " " << vals[i][0] << " " << vals[i][1]
-              << std::endl;
-  }
-#endif
   Matrix<block> pax(paxos.size(), 2);
   paxos.solve<block>(X, vals, pax, &mPrng, numThreads);
   macoro::sync_wait(chl.send(paxos.size()));
@@ -72,20 +68,12 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   oc::RandomOracle hash(sizeof(block));
   for (u64 i = 0; i < receiverSize; i++) {
     Monty25519 g_ab = mG_a * allSeeds[i];
-    // hash.Reset();
-    // hash.Update(g_ab);
-    // block hh;
-    // hash.Final(hh);
-    // valx[i] = hh;
-    memcpy(&valx[i],&g_ab,sizeof(block));
+    memcpy(&valx[i], &g_ab, sizeof(block));
     ret.mMapping[i] = i;
   }
-  u64 keyBitLength = mSsp + oc::log2ceil(receiverSize* senderSize);
+
+  u64 keyBitLength = mSsp + oc::log2ceil(receiverSize * senderSize);
   u64 keyByteLength = oc::divCeil(keyBitLength, 8);
-  // Matrix<u8> r;
-  // r.resize(receiverSize, keyByteLength + mValueByteLength, oc::AllocType::Uninitialized);
-  // auto opprf=std::make_unique<RsOpprfReceiver>() ;
-  // macoro::sync_wait(opprf->receive(senderSize, valx, r, mPrng, numThreads, chl)) ;
   
   Baxos paxos1;
   paxos1.init(receiverSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
@@ -95,24 +83,6 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   macoro::sync_wait(chl.recv(pax2));  // NOLINT
   Matrix<u8> r(receiverSize, keyByteLength + mValueByteLength);
   paxos1.decode<u8>(valx, r, pax2, numThreads);
-
-#ifdef Debug
-  std::cout << "receiver pax2\n";
-  for (u64 i = 0; i < size; i++) {
-    for (auto a : pax2[i]) {
-      std::cout << (int)a << " ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << "receiver val\n";
-  for (u64 i = 0; i < r.rows(); i++) {
-    for (auto a : r[i]) {
-      std::cout << (int)a << " ";
-    }
-    std::cout << "\n";
-  }
-#endif
-
 
   std::unique_ptr<Gmw> cmp = std::make_unique<Gmw>();
   BetaCircuit cir;
@@ -139,7 +109,6 @@ void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
     }
   }
   setTimePoint("cpsi:receiver end");
-
 }
 
 }  // namespace volePSI

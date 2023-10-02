@@ -1,6 +1,6 @@
-# MiniMPSI-PSI
+# MiniMPSI
 
-MiniMPSi implements the PSI protocols in multi-party small set scenarios. Use OKVS to encode set elements, so need to quote Paxos from Vole-PSI.
+minimpsi implements the PSI protocols in multi-party small set scenarios. Use OKVS to encode set elements, so need to quote Paxos from Vole-PSI.
 
 Vole-PSI implements the protocols described in [VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE](https://eprint.iacr.org/2021/266) and [Blazing Fast PSI from Improved OKVS and Subfield VOLE](misc/blazingFastPSI.pdf). The library implements standard [Private Set Intersection (PSI)](https://en.wikipedia.org/wiki/Private_set_intersection) along with a variant called Circuit PSI where the result is secret shared between the two parties.
 
@@ -15,8 +15,6 @@ cd minimpsi
 python3 build.py -DVOLE_PSI_ENABLE_BOOST=ON 
 ```
 
-If TCP/IP support is not required, then a minimal version of the library can be build by calling `python3 build.py`. See below and the cmake/python output for additional options.
-The user can manually call cmake as well.
 
 The output library `volepsi`,`miniMPSI`,`cPSI` and executable `frontend` will be written to `out/build/<platform>/`. The `frontend` can perform PSI based on files as input sets and communicate via sockets. See the output of `frontend` for details. 
 
@@ -54,16 +52,6 @@ python3 build.py --install=install/prefix/path
 ```
 if a custom install prefix is perfected. Install can also be performed via cmake.
 
-### Linking
-
-libOTe can be linked via cmake as
-```
-find_package(volepsi REQUIRED)
-target_link_libraries(myProject visa::volepsi)
-```
-To ensure that cmake can find volepsi, you can either install volepsi or build it locally and set `-D CMAKE_PREFIX_PATH=path/to/volepsi` or provide its location as a cmake `HINTS`, i.e. `find_package(volepsi HINTS path/to/volepsi)`.
-
-To link a non-cmake project you will need to link volepsi, libOTe,coproto, macoro, (sodium or relic), optionally boost and openss if enabled. These will be installed to the install location and staged to `./out/install/<platform>`. 
 
 
 ### Dependency Management
@@ -80,17 +68,21 @@ Input paraments
       -n: number of parties.
       -m: input set size ( 2^m ).
       -mm: input set size ( mm ).
-      -p: the party ID (must be a continuous integer of 1-( n-1 ) ) Local Multi-Terminal Time Input.
+      -p: the party ID (must be a continuous integer of 1-n ) Local Multi-Terminal Time Input.
       -t: number of threads.
       -r: 0 is semihonest model, 1 is malicous model.
--cpsi: Run the circuit psi.
+-cpsi: Run  RS21 circuit psi.
       -m <value>: the log2 size of the sets.
       -st: ValueShareType (1 xor,0 add32).
-      -nt: number of threads.
+      -t: number of threads.
+-mycpsi: Run our circuit psi.
+      -m <value>: the log2 size of the sets.
+      -st: ValueShareType (1 xor,0 add32).
+      -t: number of threads.
 -volepsi: Run the volePSI.
       -m <value>: the log2 size of the sets.
-      -malicious: run with malicious security.
-      -nt: number of threads.
+      -r: 0 is semihonest model, 1 is malicous model.
+      -t: number of threads.
 
 ```
 For example
@@ -99,8 +91,11 @@ For example
 
 ./out/build/install/frontend/frontend -mpsi -n 5 -m 7 -t 1 -r 0
 or
-./out/build/install/frontend/frontend -volepsi -m 10 -malicious 0 -nt 1
+./out/build/install/frontend/frontend -volepsi -m 10 -r 0 -t 1
 or
 ./out/build/install/frontend/frontend -cpsi -m 9 -st 1 -nt 1
+or
+./out/build/install/frontend/frontend -mycpsi -m 9 -st 1 -nt 1
+
 
 ```
