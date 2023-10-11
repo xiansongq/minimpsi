@@ -17,6 +17,7 @@
 #include "volePSI/Paxos.h"
 // using namespace osuCrypto;
 // #define Debug
+
 namespace volePSI {
 
 void cPsiSender::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
@@ -114,9 +115,6 @@ void cPsiSender::send(span<block> Y, oc::MatrixView<u8> values, Sharing& s,
     rIter += keyByteLength;
   }
 
-
-
-  
   Baxos paxos1;
   paxos1.init(senderSize, 1 << 14, 3, mSsp, PaxosParam::Binary, block(0, 0));
   Matrix<u8> pax2(paxos1.size(), keyByteLength + values.cols());

@@ -14,6 +14,7 @@
 #include "volePSI/RsOpprf.h"
 // using namespace osuCrypto;
 // #define Debug
+
 namespace volePSI {
 void cPsiReceiver::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
                         u64 mSsp, u64 numThreads, block seed,
@@ -26,6 +27,7 @@ void cPsiReceiver::init(u64 senderSize, u64 receiverSize, u64 mValueByteLength,
   this->mPrng.SetSeed(seed);
   this->mType = mType;
 }
+
 void cPsiReceiver::receive(span<block> X, Sharing& ret, Socket& chl) {
   // recv data
   using Block = typename oc::Rijndael256Enc::Block;

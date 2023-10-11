@@ -38,8 +38,11 @@ class cPsiReceiver : public oc::TimerAdapter {
     // The mapping of the receiver's input rows to output rows.
     std::vector<u64> mMapping;
   };
+
+  // mValueByteLength is the length of the associated value
   void init(u64 senderSize, u64 receiverSize, u64 mValueByteLength, u64 mSSp,
             u64 numThreads, block seed, valueShareType mType);
+
   void receive(span<block> X, Sharing& ret, Socket& chl);
 };
 

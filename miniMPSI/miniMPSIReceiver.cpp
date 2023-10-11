@@ -1,6 +1,6 @@
 // Copyright 2023 xiansongq.
 
-#include "miniMPSI/miniMPSIReceiver_Ris.h"
+#include "miniMPSI/miniMPSIReceiver.h"
 
 #include <cryptoTools/Crypto/RandomOracle.h>
 #include <sodium/crypto_core_ed25519.h>
@@ -25,16 +25,12 @@
 #define Len 2
 namespace volePSI {
 
-std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
+std::vector<std::vector<block>> miniMPSIReceiver::receive(
     std::vector<PRNG> &mseed, Socket &chl) {
-  // define variables
-
-  PRNG prng;
   PRNG prng1;
   prng1.SetSeed(toBlock(myIdx, myIdx));
 
   Matrix<block> vals(setSize, Len);
-  prng.SetSeed(toBlock(myIdx, myIdx));
 
   std::vector<std::thread> thrds(nParties);
   std::vector<block> reinputs(setSize);
@@ -46,6 +42,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
       0xa1, 0x59, 0xa5, 0x9d, 0x33, 0x1d, 0xa6, 0x15, 0xcd, 0x1e, 0x8c,
       0x75, 0xe1, 0xea, 0xe3, 0x35, 0xe4, 0x76, 0xed, 0xf1, 0xdf,
   };
+
   Block userKey = Block256(userKeyArr);
   Rijndael256Enc encKey(userKey);
 
@@ -68,6 +65,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
 #ifdef Debug
   setTimePoint("miniMPSI::reciver ris start");
 #endif
+
   auto *mG_K = new unsigned char[crypto_core_ristretto255_BYTES];
   allSeeds.resize(setSize);
   for (u64 i = 0; i < setSize; i++) {
@@ -99,7 +97,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
 
   //  OKVS encode for (inputs, g_(a_i))
   Matrix<block> pax(paxos.size(), Len);
-  paxos.solve<block>(inputs, vals, pax, &prng, numThreads);
+  paxos.solve<block>(inputs, vals, pax, &prng1, numThreads);
 
   // send parameters of OKVS encode results
   macoro::sync_wait(chl.send(paxos.size()));
@@ -144,7 +142,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receive(
   return ans;
 }
 
-std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
+std::vector<std::vector<block>> miniMPSIReceiver::receiveMonty(
     std::vector<PRNG> &mseed, Socket &chl) {
   PRNG prng;
   Matrix<block> vals(setSize, Len);
@@ -154,11 +152,13 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
   std::mutex mtx;
   reinputs = inputs;
   using Block = typename Rijndael256Enc::Block;
+
   const std::uint8_t userKeyArr[] = {
       0x6e, 0x49, 0x0e, 0xe6, 0x2b, 0xa8, 0xf4, 0x0a, 0x95, 0x83, 0xff,
       0xa1, 0x59, 0xa5, 0x9d, 0x33, 0x1d, 0xa6, 0x15, 0xcd, 0x1e, 0x8c,
       0x75, 0xe1, 0xea, 0xe3, 0x35, 0xe4, 0x76, 0xed, 0xf1, 0xdf,
   };
+
   Block userKey = Block256(userKeyArr);
   Rijndael256Enc encKey(userKey);
 
@@ -174,6 +174,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
     }
     setTimePoint("miniMPSI::receiver hash_input");
   }
+
   paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(1, 1));
 
   // create g^bi
@@ -213,7 +214,7 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
     }
   }
   paxos.decode<block>(inputs, val3, pax2, numThreads);
-  
+
 #ifdef Debug
 
   PrintLine('-');
@@ -242,13 +243,15 @@ std::vector<std::vector<block>> miniMPSIReceiver_Ris::receiveMonty(
     });
   }
   for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+
   setTimePoint("miniMPSI::receiver calculate allkey");
   std::vector<std::vector<block>> ans;
   ans.push_back(val3);
   ans.push_back(allkey);
   return ans;
 }
-void miniMPSIReceiver_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
+
+void miniMPSIReceiver::init(u64 secParam, u64 stasecParam, u64 nParties,
                                 u64 myIdx, u64 setSize,
                                 std::vector<block> inputs,  // NOLINT
                                 bool malicious, u64 numThreads) {

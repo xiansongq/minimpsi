@@ -1,9 +1,6 @@
 #pragma once
 // Copyright 2023 xiansongq.
 
-#include <sodium/crypto_core_ed25519.h>
-#include <sodium/crypto_core_ristretto255.h>
-
 #include <cassert>
 #include <iostream>
 #include <memory>
@@ -19,15 +16,13 @@
 #include "cryptoTools/Crypto/SodiumCurve.h"
 #include "miniMPSI/tools.h"
 #include "sodium.h"
-#include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
 // using namespace osuCrypto;  // NOLINT
 // using namespace volePSI;    // NOLINT
 using osuCrypto::Sodium::Monty25519;
 using osuCrypto::Sodium::Scalar25519;
 namespace volePSI {
-
-class miniMPSIReceiver_Ris : public oc ::TimerAdapter {
+class miniMPSISender : public oc::TimerAdapter {
  public:
   u64 secParam;
   u64 stasecParam;
@@ -39,18 +34,15 @@ class miniMPSIReceiver_Ris : public oc ::TimerAdapter {
   std::vector<block> inputs;
   u64 setSize;
   u64 bitSize;
-  std::vector<block> outputs;
-  std::vector<unsigned char *> allSeeds;
-  std::vector<Scalar25519> allSeed;
-  std::vector<block> zeroValue;
-
-  unsigned char *randomAK = new unsigned char[crypto_core_ristretto255_BYTES];
-
-  std::vector<std::vector<block>> receive(std::vector<PRNG> &mseed,
-                                          Socket &chl);
+  
+  // use crypto_core_ristretto255 elliptic curve
+  void send(std::vector<PRNG> &mseed, Socket &chl);
+  
   void init(u64 secParam, u64 stasecParam, u64 nParties, u64 myIdx, u64 setSize,
             std::vector<block> inputs, bool malicious, u64 numThreads);
-  std::vector<std::vector<block>> receiveMonty(std::vector<PRNG> &mseed,
-                                               Socket &chl);
+  
+  // use Monty25519 elliptic curve 
+  void sendMonty(std::vector<PRNG> &mseed, Socket &chl);
 };
+
 }  // namespace volePSI

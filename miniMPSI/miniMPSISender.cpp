@@ -1,6 +1,6 @@
 // Copyright 2023 xiansongq.
 
-#include "miniMPSI/miniMPSISender_Ris.h"
+#include "miniMPSI/miniMPSISender.h"
 
 #include <sodium/crypto_core_ristretto255.h>
 #include <sodium/crypto_scalarmult_ristretto255.h>
@@ -28,27 +28,10 @@
 #define Len 2
 namespace volePSI {
 
-void miniMPSISender_Ris::init(u64 secParam, u64 stasecParam, u64 nParties,
-                              u64 myIdx, u64 setSize, std::vector<block> inputs,
-                              bool malicious, u64 numThreads) {
-  this->secParam = secParam;
-  this->stasecParam = stasecParam;
-  this->nParties = nParties;
-  this->myIdx = myIdx;
-  this->setSize = setSize;
-  this->inputs = inputs;
-  this->malicious = malicious;
-  this->numThreads = numThreads;
-}
-
-void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
+void miniMPSISender::send(std::vector<PRNG> &mseed, Socket &chl) {
+  
   std::vector<block> zeroValue(nParties);
-  u64 leaderParty = nParties - 1;
-  PRNG prng;
   PRNG prng1;
-
-  prng.SetSeed(toBlock(myIdx, myIdx));
-
   std::vector<std::thread> thrds(nParties);
   using Block = typename Rijndael256Enc::Block;
   const std::uint8_t userKeyArr[] = {
@@ -63,7 +46,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
   // if malicious mode is enabled
   if (malicious) {
     oc::RandomOracle hash(sizeof(block));
-    for (auto i = 0; i < setSize; i++) {
+    for (u64 i = 0; i < setSize; i++) {
       hash.Reset();
       hash.Update(inputs[i]);
       block hh;
@@ -82,9 +65,11 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
       zeroValue[i] = zeroValue[i] ^ mseed[i].get<block>();
     }
   }
+
   //  choice a random number a_i and compute g^(a_i) send it to the server
   auto *mK = new unsigned char[crypto_core_ristretto255_SCALARBYTES];
   auto *mG_K = new unsigned char[crypto_core_ristretto255_BYTES];
+
   // crypto_core_ristretto255_scalar_random(mK);
   prng1.SetSeed(toBlock(myIdx, myIdx));
   prng1.implGet(mK, crypto_core_ristretto255_BYTES);
@@ -157,10 +142,12 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
       }
     }
   };
+
   thrds.resize(numThreads);
   for (u64 i = 0; i < thrds.size(); i++) {
     thrds[i] = std::thread([=] { compute(i); });
   }
+
   for (auto &thrd : thrds) {
     thrd.join();
   }
@@ -172,7 +159,7 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " encode start");
 #endif
 
-  paxos.solve<block>(inputs, allkey, pax2, &prng, numThreads);
+  paxos.solve<block>(inputs, allkey, pax2, &prng1, numThreads);
 
 #ifdef Debug
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " encode end");
@@ -195,11 +182,10 @@ void miniMPSISender_Ris::send(std::vector<PRNG> &mseed, Socket &chl) {
   macoro::sync_wait(chl.flush());
 }
 
-void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
-  std::vector<block> zeroValue(nParties);
-  u64 leaderParty = nParties - 1;
-  PRNG prng;
 
+void miniMPSISender::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
+  std::vector<block> zeroValue(nParties);
+  PRNG prng;
   prng.SetSeed(toBlock(myIdx, myIdx));
 
   std::vector<std::thread> thrds(nParties);
@@ -209,6 +195,7 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
       0xa1, 0x59, 0xa5, 0x9d, 0x33, 0x1d, 0xa6, 0x15, 0xcd, 0x1e, 0x8c,
       0x75, 0xe1, 0xea, 0xe3, 0x35, 0xe4, 0x76, 0xed, 0xf1, 0xdf,
   };
+
   Block userKey = Block256(userKeyArr);
   Rijndael256Dec decKey(userKey);
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " start");
@@ -216,7 +203,7 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   // if malicious mode is enabled
   if (malicious) {
     oc::RandomOracle hash(sizeof(block));
-    for (auto i = 0; i < setSize; i++) {
+    for (u64 i = 0; i < setSize; i++) {
       hash.Reset();
       hash.Update(inputs[i]);
       block hh;
@@ -227,9 +214,9 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   }
 
   paxos.init(setSize, 1 << 14, 3, stasecParam, PaxosParam::GF128, block(1, 1));
+  
   // create zeroshare values
   zeroValue[0] = toBlock(0, 0);
-
   for (u64 i = 0; i < nParties; i++) {
     if (i != myIdx) {
       zeroValue[i] = zeroValue[i] ^ mseed[i].get<block>();
@@ -249,7 +236,7 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   Matrix<block> pax(size, Len);
   Matrix<block> deval(setSize, Len);
   macoro::sync_wait(chl.recv((pax)));
-  
+
 #ifdef Debug
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " decode start");
 #endif
@@ -306,10 +293,12 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
       }
     }
   };
+
   thrds.resize(numThreads);
   for (u64 i = 0; i < thrds.size(); i++) {
     thrds[i] = std::thread([=] { compute(i); });
   }
+
   for (auto &thrd : thrds) {
     thrd.join();
   }
@@ -349,6 +338,19 @@ void miniMPSISender_Ris::sendMonty(std::vector<PRNG> &mseed, Socket &chl) {
   setTimePoint("miniMPSI::sender " + std::to_string(myIdx) + " end");
 
   macoro::sync_wait(chl.flush());
+}
+
+void miniMPSISender::init(u64 secParam, u64 stasecParam, u64 nParties,
+                              u64 myIdx, u64 setSize, std::vector<block> inputs,
+                              bool malicious, u64 numThreads) {
+  this->secParam = secParam;
+  this->stasecParam = stasecParam;
+  this->nParties = nParties;
+  this->myIdx = myIdx;
+  this->setSize = setSize;
+  this->inputs = inputs;
+  this->malicious = malicious;
+  this->numThreads = numThreads;
 }
 
 }  // namespace volePSI

@@ -21,8 +21,8 @@
 #include "cryptoTools/Network/Endpoint.h"
 #include "cryptoTools/Network/IOService.h"
 #include "frontend/perf.h"
-#include "miniMPSI/miniMPSIReceiver_Ris.h"
-#include "miniMPSI/miniMPSISender_Ris.h"
+#include "miniMPSI/miniMPSIReceiver.h"
+#include "miniMPSI/miniMPSISender.h"
 #include "miniMPSI/tools.h"
 #include "tests/Common.h"
 #include "tests/Paxos_Tests.h"
@@ -127,6 +127,7 @@ void mpsi(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious,
   PRNG prngSet(_mm_set_epi32(4253465, 3434565, 234435, 0));
   PRNG prng0(_mm_set_epi32(4253465, 3434565, 234435, 23987045));
   PRNG prng1(_mm_set_epi32(4253465, 3434565, 234435, 23987025));
+  
   // save random seeds
   std::vector<std::vector<block>> zsSeeds(nParties);
 
@@ -141,7 +142,9 @@ void mpsi(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious,
       }
     }
   }
+ 
   mPrngs.resize(nParties);
+  
   for (u64 i = 0; i < nParties; i++) {
     mPrngs[i].SetSeed(zsSeeds[myIdx][i]);
   }
@@ -154,9 +157,9 @@ void mpsi(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious,
     inputs[i] = prng1.get<block>();
   std::vector<block> zeroValue(nParties);
 
-  std::vector<miniMPSIReceiver_Ris> receiver(nParties);
+  std::vector<miniMPSIReceiver> receiver(nParties);
   std::vector<Timer> timers(nParties);
-  miniMPSISender_Ris sender;
+  miniMPSISender sender;
 
   if (myIdx != leaderParter) {
     sender.init(128, 40, nParties, myIdx, setSize, inputs, malicious,
@@ -178,6 +181,7 @@ void mpsi(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious,
       });
     }
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
+
   }
 
   std::vector<block> allpx2(setSize);
@@ -242,6 +246,7 @@ void mpsi(u64 nParties, u64 setSize, u64 myIdx, u64 num_Threads, bool malicious,
         }
       });
     }
+    
     for (u64 pIdx = 0; pIdx < pThrds.size(); ++pIdx) pThrds[pIdx].join();
     std::vector<block> outputs;
     for (u64 i = 0; i < setSize; i++) {

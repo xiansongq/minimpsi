@@ -8,14 +8,13 @@
 #include "cryptoTools/Crypto/PRNG.h"
 #include "cryptoTools/Crypto/SodiumCurve.h"
 #include "cryptoTools/Network/Channel.h"
+#include "shareType.h"
 #include "sodium.h"
 #include "volePSI/Defines.h"
-#include "shareType.h"
 #include "volePSI/GMW/Gmw.h"
 #include "volePSI/RsOpprf.h"
 #include "volePSI/SimpleIndex.h"
 #include "volePSI/config.h"
-#include "volePSI/RsOpprf.h"
 
 using osuCrypto::Sodium::Monty25519;
 using osuCrypto::Sodium::Scalar25519;
@@ -42,8 +41,12 @@ class cPsiSender : public oc::TimerAdapter {
     // possible output rows.
     std::vector<std::array<u64, 3>> mMapping;
   };
+
+  // mValueByteLength is the length of the associated value
   void init(u64 senderSize, u64 receiverSize, u64 mValueByteLength, u64 mSSp,
             u64 numThreads, block seed, valueShareType mType);
+
+  // values is associated value with respect to Y
   void send(span<block> Y, oc::MatrixView<u8> values, Sharing& s, Socket& chl);
 };
 
