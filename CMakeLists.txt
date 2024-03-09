@@ -20,8 +20,8 @@ find_package(volePSI REQUIRED HINTS "./libvolepsi")
 
 set(CMAKE_BUILD_TYPE Release)
 
-target_compile_options(main PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++17> -lpthread -O3)
-target_link_libraries(main visa::volePSI)
+target_compile_options(miniMPSI PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++17> -lpthread -O3)
+target_link_libraries(miniMPSI visa::volePSI)
 
 # # for test
 # add_executable(testBeaver test/Beaver_test.cpp common/util.cpp circuit/Circuit.cpp)
