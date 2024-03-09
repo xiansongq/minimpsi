@@ -35,7 +35,7 @@ cd ..
 
 ### Build
 ```
-mkdir build & cd build
+mkdir build && cd build
 cmake ..
 make
 ```
@@ -73,13 +73,13 @@ For example
 
 ```Bash
 
-./build/main -mpsi -n 5 -m 7 -t 1 -r 0
+./build/miniMPSI -mpsi -n 5 -m 7 -t 1 -r 0
 or
-./build/maind -volepsi -m 10 -r 0 -t 1
+./build/miniMPSI -volepsi -m 10 -r 0 -t 1
 or
-./build/main -cpsi -m 9 -st 1 -nt 1
+./build/miniMPSI -cpsi -m 9 -st 1 -nt 1
 or
-./build/main -mycpsi -m 9 -st 1 -nt 1
+./build/miniMPSI -mycpsi -m 9 -st 1 -nt 1
 
 
 ```

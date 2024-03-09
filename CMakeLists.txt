@@ -14,7 +14,7 @@ file(GLOB_RECURSE SRCS
     frontend/*.cpp
 )
 
-add_executable(main ${SRCS})
+add_executable(miniMPSI ${SRCS})
 
 find_package(volePSI REQUIRED HINTS "./libvolepsi")
 
