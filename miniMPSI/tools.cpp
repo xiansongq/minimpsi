@@ -1,6 +1,6 @@
 // Copyright 2023 xiansongq.
 
-#include "miniMPSI/tools.h"
+#include "../miniMPSI/tools.h"
 
 #include <cassert>
 

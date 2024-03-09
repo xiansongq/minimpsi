@@ -1,32 +1,29 @@
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required(VERSION 3.15)
+project(minimpsi)
 
-project(miniMPSI VERSION 0.1.2)
+include_directories(cPSI)
+include_directories(miniMPSI)
+include_directories(frontend)
+include_directories(MPSI)
 
-set(VOLEPSI_BUILD ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS True)
-# sets some variables
-include(cmake/preamble.cmake)
 
-# sets build option
-include(cmake/buildOptions.cmake)
 
-# find all the dependancies.
-include(cmake/findDependancies.cmake)
+file(GLOB_RECURSE SRCS
+    cPSI/*.cpp
+    miniMPSI/*.cpp
+    frontend/*.cpp
+)
 
-# build volePSI
-add_subdirectory(volePSI)
+add_executable(main ${SRCS})
 
-#build miniMPSI
-add_subdirectory(miniMPSI)
+find_package(volePSI REQUIRED HINTS "./libvolepsi")
 
-#build cPSI
-add_subdirectory(cPSI)
+set(CMAKE_BUILD_TYPE Release)
 
-# build the tests.
-#add_subdirectory(tests)
+target_compile_options(main PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++17> -lpthread -O3)
+target_link_libraries(main visa::volePSI)
 
-# link the executable.
-add_subdirectory(frontend)
-
-# setup the install
-#include(cmake/install.cmake)
+# # for test
+# add_executable(testBeaver test/Beaver_test.cpp common/util.cpp circuit/Circuit.cpp)
+# target_compile_options(testBeaver PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++17> -lpthread -O3)
+# target_link_libraries(testBeaver visa::volePSI)

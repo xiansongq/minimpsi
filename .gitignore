@@ -34,4 +34,6 @@ cPSI/libcPSI.a
 miniMPSI/libminiMPSI.a
 # .clang-format
 # .clang-tidy
-~/
+volepsi/
+libvolepsi/
+build/

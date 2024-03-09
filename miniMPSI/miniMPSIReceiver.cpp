@@ -1,6 +1,6 @@
 // Copyright 2023 xiansongq.
 
-#include "miniMPSI/miniMPSIReceiver.h"
+#include "miniMPSIReceiver.h"
 
 #include <cryptoTools/Crypto/RandomOracle.h>
 #include <sodium/crypto_core_ed25519.h>
@@ -18,7 +18,7 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "macoro/sync_wait.h"
 #include "macoro/thread_pool.h"
-#include "miniMPSI/tools.h"
+#include "tools.h"
 #include "volePSI/Defines.h"
 #include "volePSI/RsCpsi.h"
 // #define Debug

@@ -1,6 +1,6 @@
 // Copyright 2023 xiansongq.
 
-#include "miniMPSI/miniMPSISender.h"
+#include "miniMPSISender.h"
 
 #include <sodium/crypto_core_ristretto255.h>
 #include <sodium/crypto_scalarmult_ristretto255.h>
@@ -20,7 +20,7 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "macoro/sync_wait.h"
 #include "macoro/thread_pool.h"
-#include "miniMPSI/tools.h"
+#include "tools.h"
 #include "volePSI/Defines.h"
 #include "volePSI/RsCpsi.h"
 

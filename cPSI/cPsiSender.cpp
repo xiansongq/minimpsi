@@ -12,7 +12,7 @@
 #include <cstring>
 #include <memory>
 
-#include "miniMPSI/tools.h"
+#include "tools.h"
 #include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
 // using namespace osuCrypto;

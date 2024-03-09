@@ -17,7 +17,7 @@
 #include "cryptoTools/Crypto/RCurve.h"
 #include "cryptoTools/Crypto/Rijndael256.h"
 #include "cryptoTools/Crypto/SodiumCurve.h"
-#include "miniMPSI/tools.h"
+#include "tools.h"
 #include "sodium.h"
 #include "volePSI/Defines.h"
 #include "volePSI/Paxos.h"
