@@ -1,0 +1,3 @@
+/home/xsqian/file/project/minimpsi/build/CMakeFiles/edit_cache.dir
+/home/xsqian/file/project/minimpsi/build/CMakeFiles/rebuild_cache.dir
+/home/xsqian/file/project/minimpsi/build/CMakeFiles/miniMPSI.dir
